@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="CheckPoint DB">
+<meta name="theme-color" content="#0066cc">
+<title>CheckPoint Daytona Beach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f5f0;
+  --surface: #ffffff;
+  --surface2: #eeede8;
+  --surface3: #e5e4de;
+  --border: rgba(0,0,0,0.08);
+  --border2: rgba(0,0,0,0.14);
+  --text: #1a1a2e;
+  --muted: #6b7280;
+  --accent: #0066cc;
+  --accent-dark: #0052a3;
+  --accent-dim: rgba(0,102,204,0.08);
+  --accent-text: #ffffff;
+  --danger: #dc2626;
+  --danger-dim: rgba(220,38,38,0.08);
+  --success: #16a34a;
+  --warning: #d97706;
+  --info: #0066cc;
+  --topbar-bg: #0066cc;
+  --topbar-text: #ffffff;
+  --radius: 14px;
+  --mono: 'DM Mono', monospace;
+  --sans: 'Syne', sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+/* AUTH */
+.auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; padding-top: calc(var(--safe-top) + 2rem); background: var(--bg); }
+.auth-logo { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.2rem; color: var(--text); }
+.auth-logo span { color: var(--accent); }
+.auth-sub { font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-bottom: 0.4rem; letter-spacing: 0.02em; }
+.auth-tagline { color: var(--muted); font-size: 0.78rem; margin-bottom: 2.5rem; font-family: var(--mono); }
+.auth-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 2rem; width: 100%; max-width: 400px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+.auth-card h2 { font-size: 0.72rem; font-weight: 600; margin-bottom: 1.5rem; color: var(--muted); font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.form-group { margin-bottom: 0.9rem; }
+.form-group label { display: block; font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-bottom: 0.35rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.form-group input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 9px; padding: 0.7rem 0.9rem; color: var(--text); font-size: 0.9rem; font-family: var(--sans); outline: none; transition: border-color 0.15s; }
+.form-group input:focus { border-color: var(--accent); background: var(--surface); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem 1.25rem; border-radius: 9px; border: none; cursor: pointer; font-family: var(--sans); font-size: 0.9rem; font-weight: 600; transition: all 0.15s; white-space: nowrap; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--accent); color: #fff; width: 100%; margin-top: 0.5rem; }
+.btn-primary:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-1px); }
+.btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--muted); }
+.btn-ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.btn-danger { background: var(--danger-dim); border: 1px solid rgba(220,38,38,0.2); color: var(--danger); }
+.btn-danger:hover:not(:disabled) { background: rgba(220,38,38,0.15); }
+.btn-secondary { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); }
+.btn-secondary:hover:not(:disabled) { background: var(--surface3); }
+.btn-sm { padding: 0.35rem 0.8rem; font-size: 0.78rem; border-radius: 7px; }
+.auth-switch { text-align: center; margin-top: 1.25rem; font-size: 0.85rem; color: var(--muted); }
+.auth-switch a { color: var(--accent); text-decoration: none; cursor: pointer; font-weight: 600; }
+.msg { font-size: 0.78rem; font-family: var(--mono); margin-top: 0.75rem; text-align: center; }
+.msg-error { color: var(--danger); }
+.msg-success { color: var(--success); }
+.hidden { display: none !important; }
+
+/* TOPBAR — solid blue with safe area padding for iPhone notch */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(var(--safe-top) + 0.75rem) 1.25rem 0.75rem;
+  background: var(--topbar-bg);
+  position: sticky; top: 0; z-index: 200;
+}
+.topbar-logo { font-size: 1rem; font-weight: 800; letter-spacing: -0.02em; color: var(--topbar-text); line-height: 1.2; }
+.topbar-logo span { color: rgba(255,255,255,0.75); font-weight: 600; font-size: 0.75rem; display: block; letter-spacing: 0.02em; }
+.topbar-right { display: flex; align-items: center; gap: 0.75rem; }
+.topbar-user { font-size: 0.78rem; color: rgba(255,255,255,0.8); font-family: var(--mono); }
+.topbar .btn-ghost { border-color: rgba(255,255,255,0.35); color: rgba(255,255,255,0.9); }
+.topbar .btn-ghost:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.6); color: #fff; }
+
+/* GPS BAR */
+.gps-bar { display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1.25rem; background: var(--surface); border-bottom: 1px solid var(--border); font-size: 0.72rem; font-family: var(--mono); color: var(--muted); }
+.gps-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: background 0.3s; }
+.gps-dot.active { background: var(--success); animation: pulse 2s infinite; }
+.gps-dot.error { background: var(--danger); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* TABS */
+.nav-tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 1rem; overflow-x: auto; scrollbar-width: none; }
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tab { padding: 0.75rem 0.875rem; font-size: 0.72rem; font-weight: 600; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; font-family: var(--mono); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; }
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* MAP */
+#map { height: calc(100vh - 130px); width: 100%; }
+.leaflet-container { background: #e8e4dc !important; }
+/* SPLASH */
+.splash-overlay { position: fixed; inset: 0; z-index: 99998; background: #0a1628; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
+.splash-flag { font-size: 3rem; margin-bottom: 1rem; }
+.splash-logo { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 0.3rem; }
+.splash-sub { font-size: 1rem; font-weight: 600; color: #0066cc; margin-bottom: 1.5rem; letter-spacing: 0.04em; }
+.splash-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 1.5rem; max-width: 400px; width: 100%; margin-bottom: 1.75rem; }
+.splash-card p { font-family: 'Syne', sans-serif; font-size: 0.9rem; color: rgba(255,255,255,0.8); line-height: 1.75; margin-bottom: 1rem; }
+.splash-card p:last-child { margin-bottom: 0; }
+.splash-card strong { color: #fff; }
+.splash-pills { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; margin-bottom: 1.5rem; }
+.splash-pill { background: rgba(0,102,204,0.2); border: 1px solid rgba(0,102,204,0.4); border-radius: 99px; padding: 0.3rem 0.9rem; font-size: 0.75rem; font-family: 'DM Mono', monospace; color: #60a5fa; }
+.splash-btn { background: #0066cc; color: #fff; border: none; border-radius: 12px; padding: 0.9rem 2.5rem; font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.15s; letter-spacing: 0.01em; }
+.splash-btn:hover { background: #0052a3; transform: translateY(-2px); }
+.splash-version { font-size: 0.65rem; color: rgba(255,255,255,0.25); font-family: 'DM Mono', monospace; margin-top: 1.25rem; }
+
+/* QR SCANNER TAB */
+.qr-section { padding: 1.25rem; max-width: 500px; margin: 0 auto; }
+.qr-intro { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: var(--muted); font-family: var(--mono); line-height: 1.7; }
+.qr-intro strong { color: var(--text); font-family: var(--sans); }
+.qr-viewport-wrap { position: relative; width: 100%; aspect-ratio: 1; background: #000; border-radius: 14px; overflow: hidden; margin-bottom: 1rem; }
+.qr-viewport-wrap video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.qr-corners { position: absolute; inset: 0; pointer-events: none; }
+.qr-corner { position: absolute; width: 28px; height: 28px; border-color: #0066cc; border-style: solid; border-width: 0; }
+.qr-corner.tl { top: 16px; left: 16px; border-top-width: 3px; border-left-width: 3px; border-radius: 4px 0 0 0; }
+.qr-corner.tr { top: 16px; right: 16px; border-top-width: 3px; border-right-width: 3px; border-radius: 0 4px 0 0; }
+.qr-corner.bl { bottom: 16px; left: 16px; border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 4px; }
+.qr-corner.br { bottom: 16px; right: 16px; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 4px 0; }
+.qr-scan-line { position: absolute; left: 16px; right: 16px; height: 2px; background: linear-gradient(90deg, transparent, #0066cc, transparent); animation: scanLine 2s ease-in-out infinite; }
+@keyframes scanLine { 0%,100% { top: 16px; opacity: 0.8; } 50% { top: calc(100% - 18px); opacity: 1; } }
+.qr-status { text-align: center; font-size: 0.8rem; font-family: var(--mono); color: var(--muted); margin-bottom: 1rem; min-height: 1.4rem; }
+.qr-status.success { color: var(--success); }
+.qr-status.error { color: var(--danger); }
+.qr-start-btn { width: 100%; padding: 0.85rem; background: var(--accent); color: #fff; border: none; border-radius: 10px; font-family: var(--sans); font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+.qr-start-btn:hover { background: var(--accent-dark); }
+.qr-stop-btn { width: 100%; padding: 0.75rem; background: var(--surface2); border: 1px solid var(--border2); color: var(--muted); border-radius: 10px; font-family: var(--sans); font-size: 0.875rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem; }
+
+/* QR CODES ADMIN */
+.qr-codes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.qr-code-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; }
+.qr-code-card canvas { border-radius: 8px; }
+.qr-code-name { font-size: 0.75rem; font-weight: 600; color: var(--text); margin-top: 0.6rem; margin-bottom: 0.4rem; line-height: 1.3; }
+.qr-code-dl { font-size: 0.68rem; color: var(--accent); font-family: var(--mono); cursor: pointer; text-decoration: underline; }
+
+/* BOTTOM SHEET *//* BOTTOM SHEET */
+.bs-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 2000; opacity: 0; transition: opacity 0.25s; pointer-events: none; }
+.bs-overlay.open { opacity: 1; pointer-events: all; }
+.bs-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 2001;
+  background: var(--surface); border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+  transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height: 85vh; overflow-y: auto; overscroll-behavior: contain;
+}
+.bs-sheet.open { transform: translateY(0); }
+.bs-handle { width: 40px; height: 4px; background: var(--border2); border-radius: 99px; margin: 12px auto 0; }
+.bs-img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
+.bs-body { padding: 16px 20px 32px; }
+.bs-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+.bs-name { font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; line-height: 1.2; flex: 1; padding-right: 0.5rem; }
+.bs-close { background: var(--surface2); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; color: var(--muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.bs-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+.bs-meta { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border); }
+.bs-pts { font-size: 0.75rem; font-family: var(--mono); color: var(--muted); }
+.bs-status { font-size: 0.75rem; font-weight: 700; font-family: var(--mono); }
+.bs-status.visited { color: var(--accent); }
+.bs-status.not-visited { color: var(--muted); }
+@media (min-width: 600px) {
+  .bs-sheet { left: 50%; right: auto; width: 420px; transform: translateX(-50%) translateY(100%); border-radius: 20px 20px 0 0; bottom: 0; }
+  .bs-sheet.open { transform: translateX(-50%) translateY(0); }
+}
+
+/* CHECK-IN MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.5rem; backdrop-filter: blur(4px); }
+.modal-card { background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius); padding: 2rem; max-width: 360px; width: 100%; text-align: center; animation: popIn 0.2s ease; box-shadow: 0 20px 60px rgba(0,102,204,0.15), 0 8px 24px rgba(0,0,0,0.1); }
+@keyframes popIn { from { transform: scale(0.92) translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.modal-icon { font-size: 3rem; margin-bottom: 0.75rem; display: block; }
+.modal-card h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.35rem; letter-spacing: -0.02em; color: var(--text); }
+.modal-card .modal-sub { color: var(--muted); font-size: 0.8rem; font-family: var(--mono); margin-bottom: 0.75rem; }
+.points-preview { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--accent-dim); border: 1px solid rgba(0,102,204,0.2); border-radius: 99px; padding: 0.3rem 0.85rem; font-family: var(--mono); font-size: 0.85rem; color: var(--accent); font-weight: 600; margin-bottom: 1.5rem; }
+.modal-btns { display: flex; gap: 0.75rem; }
+.modal-btns .btn { flex: 1; }
+
+/* SECTION */
+.section-pad { padding: 1.25rem; max-width: 860px; margin: 0 auto; }
+.section-title { font-size: 0.68rem; font-weight: 600; color: var(--muted); font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.875rem; }
+
+/* STATS GRID */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+@media (max-width: 600px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 0.875rem; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+.stat-num { font-size: 1.6rem; font-weight: 800; color: var(--accent); letter-spacing: -0.03em; line-height: 1; }
+.stat-label { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); margin-top: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-sub { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); margin-top: 0.1rem; }
+
+/* HISTORY */
+.history-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.history-item { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 0.875rem 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.history-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.history-name { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.history-time { font-size: 0.7rem; color: var(--muted); font-family: var(--mono); margin-top: 0.1rem; }
+.history-right { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.badge { font-size: 0.65rem; font-family: var(--mono); padding: 0.2rem 0.6rem; border-radius: 99px; border: 1px solid; font-weight: 500; }
+.badge-accent { background: var(--accent-dim); color: var(--accent); border-color: rgba(0,102,204,0.2); }
+.badge-first { background: rgba(217,119,6,0.08); color: var(--warning); border-color: rgba(217,119,6,0.2); }
+.empty-state { text-align: center; padding: 3rem 1rem; color: var(--muted); font-family: var(--mono); font-size: 0.82rem; line-height: 1.8; }
+
+/* LEADERBOARD */
+.leaderboard-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.lb-item { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 0.875rem 1rem; display: flex; align-items: center; gap: 0.875rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.lb-item.lb-me { border-color: rgba(0,102,204,0.3); background: rgba(0,102,204,0.03); }
+.lb-rank { font-size: 0.78rem; font-family: var(--mono); color: var(--muted); width: 24px; text-align: center; flex-shrink: 0; }
+.lb-rank.top1 { color: #b8860b; font-weight: 700; }
+.lb-rank.top2 { color: #708090; font-weight: 700; }
+.lb-rank.top3 { color: #8b4513; font-weight: 700; }
+.lb-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; flex-shrink: 0; }
+.lb-info { flex: 1; min-width: 0; }
+.lb-name { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.lb-sub { font-size: 0.68rem; color: var(--muted); font-family: var(--mono); margin-top: 0.1rem; }
+.lb-points { font-size: 1rem; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+.lb-pts-label { font-size: 0.62rem; color: var(--muted); font-family: var(--mono); }
+
+/* ACHIEVEMENTS */
+.achievements-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
+.achievement-card { background: var(--surface); border: 1px solid var(--border); border-radius: 11px; overflow: hidden; opacity: 0.35; transition: opacity 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.achievement-card.unlocked { opacity: 1; border-color: rgba(0,102,204,0.25); box-shadow: 0 2px 8px rgba(0,102,204,0.08); }
+.ach-img { width: 100%; height: 100px; object-fit: cover; display: block; }
+.ach-body { padding: 0.875rem; }
+.ach-icon { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+.ach-name { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.2rem; color: var(--text); }
+.ach-desc { font-size: 0.7rem; color: var(--muted); font-family: var(--mono); line-height: 1.5; }
+.ach-pts { font-size: 0.65rem; color: var(--accent); font-family: var(--mono); margin-top: 0.35rem; font-weight: 500; }
+.ach-unlocked-badge { display: inline-block; font-size: 0.6rem; font-family: var(--mono); background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(0,102,204,0.2); border-radius: 99px; padding: 0.15rem 0.5rem; margin-top: 0.4rem; font-weight: 600; }
+
+/* ADMIN */
+.admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+@media (max-width: 640px) { .admin-grid { grid-template-columns: 1fr; } }
+.admin-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.admin-card h3 { font-size: 0.68rem; font-weight: 600; color: var(--muted); font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 1rem; }
+.inline-form { display: flex; flex-direction: column; gap: 0.6rem; }
+.inline-form input, .inline-form select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 9px;
+  padding: 0.6rem 0.8rem; color: var(--text); font-size: 0.875rem; font-family: var(--sans); outline: none; transition: border-color 0.15s;
+}
+.inline-form input:focus, .inline-form select:focus { border-color: var(--accent); background: var(--surface); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.location-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 400px; overflow-y: auto; }
+.location-row { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.65rem 0.75rem; background: var(--surface2); border-radius: 9px; font-size: 0.82rem; }
+.location-row-info { flex: 1; min-width: 0; }
+.location-row-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.location-row-meta { font-size: 0.67rem; color: var(--muted); font-family: var(--mono); margin-top: 0.15rem; line-height: 1.5; }
+.location-row-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+.scoring-row { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.75rem; background: var(--surface2); border-radius: 8px; margin-bottom: 0.4rem; }
+.scoring-key { font-size: 0.7rem; color: var(--muted); font-family: var(--mono); }
+.scoring-val { font-size: 0.85rem; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+.gps-fill-btn { background: var(--accent-dim); border: 1px solid rgba(0,102,204,0.2); color: var(--accent); border-radius: 9px; padding: 0.6rem 0.8rem; font-size: 0.82rem; font-family: var(--sans); font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
+.gps-fill-btn:hover { background: rgba(0,102,204,0.14); }
+.photo-upload-label { display: flex; align-items: center; justify-content: center; gap: 0.4rem; background: var(--surface2); border: 1.5px dashed var(--border2); border-radius: 9px; padding: 0.75rem; font-size: 0.82rem; font-family: var(--sans); font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; }
+.photo-upload-label:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+.photo-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 9px; border: 1px solid var(--border2); display: none; }
+.photo-preview.visible { display: block; }
+.loc-popup-img { width: 100%; height: 130px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; }
+.modal-location-img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; margin-bottom: 1rem; display: block; }
+</style>
+</head>
+<body>
+
+<!-- AUTH: LOGIN -->
+<div id="screen-login" class="auth-screen hidden">
+  <div class="auth-logo">CheckPoint</div>
+  <div class="auth-sub">Daytona Beach</div>
+  <div class="auth-tagline">// location check-in &amp; scoring</div>
+  <div class="auth-card">
+    <h2>Sign in</h2>
+    <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Sign in</button>
+    <div id="login-error" class="msg msg-error hidden"></div>
+  </div>
+  <div class="auth-switch">No account? <a onclick="showScreen('register')">Create one</a> &nbsp;·&nbsp; <a onclick="showScreen('reset')">Forgot password?</a></div>
+</div>
+
+<!-- AUTH: REGISTER -->
+<div id="screen-register" class="auth-screen hidden">
+  <div class="auth-logo">CheckPoint</div>
+  <div class="auth-sub">Daytona Beach</div>
+  <div class="auth-tagline">// create your account</div>
+  <div class="auth-card">
+    <h2>Register</h2>
+    <div class="form-group"><label>Display Name</label><input type="text" id="reg-name" placeholder="Your name"></div>
+    <div class="form-group"><label>Username</label><input type="text" id="reg-username" placeholder="letters, numbers, underscores"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="6+ characters" autocomplete="new-password"></div>
+    <button class="btn btn-primary" id="reg-btn" onclick="doRegister()">Create account</button>
+    <div id="reg-error" class="msg msg-error hidden"></div>
+    <div id="reg-success" class="msg msg-success hidden"></div>
+  </div>
+  <div class="auth-switch">Already have an account? <a onclick="showScreen('login')">Sign in</a></div>
+</div>
+
+<!-- AUTH: RESET -->
+<div id="screen-reset" class="auth-screen hidden">
+  <div class="auth-logo">CheckPoint</div>
+  <div class="auth-sub">Daytona Beach</div>
+  <div class="auth-card">
+    <h2>Reset password</h2>
+    <div class="form-group"><label>Email</label><input type="email" id="reset-email" placeholder="you@example.com"></div>
+    <button class="btn btn-primary" onclick="doReset()">Send reset email</button>
+    <div id="reset-msg" class="msg msg-success hidden"></div>
+  </div>
+  <div class="auth-switch"><a onclick="showScreen('login')">Back to sign in</a></div>
+</div>
+
+<!-- SPLASH -->
+<div id="splash-screen" class="splash-overlay hidden">
+  <div class="splash-flag">🏁</div>
+  <div class="splash-logo">CheckPoint</div>
+  <div class="splash-sub">DAYTONA BEACH</div>
+  <div class="splash-card">
+    <p>Welcome to <strong>CheckPoint Daytona Beach</strong> — your guide to the most storied stretch of motorsport history on the planet.</p>
+    <p>From the first timed automobile races in <strong>1903</strong> to the founding of <strong>NASCAR</strong>, the Daytona area shaped the entire world of racing. These streets, beaches, and buildings are where legends were made.</p>
+    <p>Explore <strong>25 historic locations</strong> on the map, visit them in person, and check in to earn points. Unlock achievements as you discover more of the story. The full picture only reveals itself when you go.</p>
+  </div>
+  <div class="splash-pills">
+    <span class="splash-pill">🗺️ 25 locations</span>
+    <span class="splash-pill">🏆 achievements</span>
+    <span class="splash-pill">📍 GPS check-in</span>
+    <span class="splash-pill">📷 QR check-in</span>
+  </div>
+  <button class="splash-btn" onclick="dismissSplash()">Let's Go →</button>
+  <div class="splash-version">CheckPoint Daytona Beach · The World Center of Racing</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="screen-main" class="hidden">
+  <div class="topbar">
+    <div class="topbar-logo">
+      CheckPoint
+      <span>Daytona Beach</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-user" id="topbar-user"></div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+  <div class="gps-bar">
+    <div class="gps-dot" id="gps-dot"></div>
+    <span id="gps-status">Waiting for GPS...</span>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-tab="map" onclick="switchTab('map')">Map</div>
+    <div class="nav-tab" data-tab="qrscan" onclick="switchTab('qrscan')">QR Check In</div>
+    <div class="nav-tab" data-tab="history" onclick="switchTab('history')">History</div>
+    <div class="nav-tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">Leaderboard</div>
+    <div class="nav-tab" data-tab="achievements" onclick="switchTab('achievements')">Achievements</div>
+    <div class="nav-tab hidden" id="admin-tab" data-tab="admin" onclick="switchTab('admin')">Admin</div>
+  </div>
+
+  <div id="tab-map" class="tab-content active"><div id="map"></div></div>
+
+  <div id="tab-qrscan" class="tab-content">
+    <div class="qr-section">
+      <div class="qr-intro">
+        <strong>Scan a location QR code to check in.</strong><br>
+        No GPS needed — just point your camera at the QR code posted at any CheckPoint location. The app will verify it and check you in instantly.
+      </div>
+      <div class="qr-viewport-wrap hidden" id="qr-viewport-wrap">
+        <video id="qr-video" playsinline></video>
+        <div class="qr-corners">
+          <div class="qr-corner tl"></div>
+          <div class="qr-corner tr"></div>
+          <div class="qr-corner bl"></div>
+          <div class="qr-corner br"></div>
+        </div>
+        <div class="qr-scan-line"></div>
+      </div>
+      <div class="qr-status" id="qr-status">Ready to scan</div>
+      <button class="qr-start-btn" id="qr-start-btn" onclick="startQRScanner()">Start Camera</button>
+      <button class="qr-stop-btn hidden" id="qr-stop-btn" onclick="stopQRScanner()">Stop Camera</button>
+    </div>
+  </div>
+
+  <div id="tab-history" class="tab-content">
+    <div class="section-pad">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="section-title">Recent check-ins</div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <div id="tab-leaderboard" class="tab-content">
+    <div class="section-pad">
+      <div class="section-title">All-time leaderboard</div>
+      <div id="leaderboard-list"></div>
+    </div>
+  </div>
+
+  <div id="tab-achievements" class="tab-content">
+    <div class="section-pad">
+      <div class="section-title">Achievements</div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+        <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:0.4rem;letter-spacing:-0.01em">
+          🏆 Earn your badges out there!
+        </div>
+        <div style="font-size:0.82rem;color:var(--muted);line-height:1.75;font-family:var(--mono)">
+          Every time you check in, the app checks your progress and unlocks any badges you've earned — automatically. Rack up check-ins, build a daily streak, discover new locations, and watch your collection grow. Dimmed badges are still waiting for you. Bright ones? You crushed it. 🌴
+        </div>
+      </div>
+      <div id="achievements-grid" class="achievements-grid"></div>
+    </div>
+  </div>
+
+  <div id="tab-admin" class="tab-content">
+    <div class="section-pad">
+      <div class="admin-grid">
+
+        <!-- Add Location -->
+        <div class="admin-card">
+          <h3>Add Location</h3>
+          <div class="inline-form">
+            <input type="text" id="loc-name" placeholder="Location name">
+            <textarea id="loc-desc" placeholder="Description (optional). Paste a URL to make it a clickable link." rows="3" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;padding:0.6rem 0.8rem;color:var(--text);font-size:0.875rem;font-family:var(--sans);outline:none;resize:vertical;transition:border-color 0.15s;"></textarea>
+            <label class="photo-upload-label" for="loc-photo">
+              📷 Add a photo (optional)
+            </label>
+            <input type="file" id="loc-photo" accept="image/*" style="display:none" onchange="previewPhoto(this)">
+            <img id="loc-photo-preview" class="photo-preview" alt="Preview">
+            <button class="gps-fill-btn" onclick="fillMyLocation()">
+              📍 Use my current location
+            </button>
+            <div class="form-row">
+              <input type="number" id="loc-lat" placeholder="Latitude" step="0.000001">
+              <input type="number" id="loc-lng" placeholder="Longitude" step="0.000001">
+            </div>
+            <div class="form-row">
+              <input type="number" id="loc-radius" placeholder="Radius (m)" value="100">
+              <input type="number" id="loc-points" placeholder="Points" value="10">
+            </div>
+            <button class="btn btn-primary" onclick="adminAddLocation()">Add location</button>
+            <div id="loc-msg" class="msg hidden"></div>
+          </div>
+        </div>
+
+        <!-- Location List -->
+        <div class="admin-card">
+          <h3>Locations (<span id="loc-count">0</span>)</h3>
+          <div id="admin-location-list" class="location-list"></div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="admin-grid">
+        <!-- Scoring Rules -->
+        <div class="admin-card">
+          <h3>Scoring Rules</h3>
+          <div id="scoring-rules-list"></div>
+        </div>
+        <!-- Admin Tools -->
+        <div class="admin-card">
+          <h3>Admin Tools</h3>
+          <div class="inline-form">
+            <input type="text" id="promote-email" placeholder="Username to grant admin">
+            <button class="btn btn-primary" onclick="adminPromote()">Grant admin access</button>
+            <div id="promote-msg" class="msg hidden"></div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <div class="admin-grid">
+        <!-- Add Achievement -->
+        <div class="admin-card">
+          <h3>Add Achievement</h3>
+          <div class="inline-form">
+            <div class="form-row">
+              <input type="text" id="ach-icon" placeholder="Icon emoji e.g. 🏆" maxlength="4">
+              <input type="text" id="ach-key" placeholder="Unique key e.g. explorer_50">
+            </div>
+            <input type="text" id="ach-name" placeholder="Achievement name">
+            <input type="text" id="ach-desc" placeholder="Description shown to users">
+            <input type="number" id="ach-points" placeholder="Bonus points awarded" value="0">
+            <select id="ach-trigger">
+              <option value="manual">Manual (admin awards only)</option>
+              <option value="checkins_total">Auto — total check-ins reaches...</option>
+              <option value="locations_total">Auto — unique locations reaches...</option>
+              <option value="streak_days">Auto — streak days reaches...</option>
+              <option value="points_total">Auto — total points reaches...</option>
+            </select>
+            <input type="number" id="ach-threshold" placeholder="Threshold number (e.g. 10)" value="0">
+            <label class="photo-upload-label" for="ach-photo">📷 Add achievement image (optional)</label>
+            <input type="file" id="ach-photo" accept="image/*" style="display:none" onchange="previewAchievementPhoto(this,'add')">
+            <img id="ach-photo-preview" class="photo-preview" alt="Preview">
+            <button class="btn btn-primary" onclick="adminAddAchievement()">Add achievement</button>
+            <div id="ach-msg" class="msg hidden"></div>
+          </div>
+        </div>
+
+        <!-- Achievement List -->
+        <div class="admin-card">
+          <h3>Achievements (<span id="ach-count">0</span>)</h3>
+          <div id="admin-achievement-list" class="location-list"></div>
+        </div>
+      </div>
+      <hr class="divider">
+      <div class="admin-card" style="margin-top:0">
+        <h3>Location QR Codes</h3>
+        <p style="font-size:0.78rem;color:var(--muted);font-family:var(--mono);margin-bottom:0.75rem;line-height:1.6">Print and post these at each physical location. Users can scan them to check in without GPS.</p>
+        <button class="btn btn-primary" style="width:auto;margin-top:0" onclick="renderQRCodes()">Generate QR Codes</button>
+        <div id="qr-codes-grid" class="qr-codes-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOCATION BOTTOM SHEET -->
+<div id="bs-overlay" class="bs-overlay" onclick="closeBottomSheet()"></div>
+<div id="bs-sheet" class="bs-sheet">
+  <div class="bs-handle"></div>
+  <img id="bs-img" src="" alt="" class="bs-img hidden">
+  <div class="bs-body">
+    <div class="bs-header">
+      <div class="bs-name" id="bs-name"></div>
+      <button class="bs-close" onclick="closeBottomSheet()">✕</button>
+    </div>
+    <div class="bs-desc" id="bs-desc"></div>
+    <div class="bs-meta">
+      <span class="bs-pts" id="bs-pts"></span>
+      <span class="bs-status" id="bs-status"></span>
+    </div>
+  </div>
+</div>
+
+<!-- CHECK-IN MODAL -->
+<div id="checkin-overlay" class="modal-overlay hidden">
+  <div class="modal-card">
+    <img id="ci-photo" class="modal-location-img hidden" alt="Location photo">
+    <span class="modal-icon" id="ci-icon">📍</span>
+    <h2 id="ci-name">Location</h2>
+    <div class="modal-sub" id="ci-sub">You're within range</div>
+    <div class="points-preview" id="ci-points">+10 pts</div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="dismissCheckin()">Not now</button>
+      <button class="btn btn-primary" id="ci-confirm-btn" onclick="confirmCheckin()">Check in!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE ─────────────────────────────────────────────────
+let sb = null;
+function initSupabase(url, key) {
+  sb = window.supabase.createClient(url, key);
+  bootApp();
+}
+const SUPABASE_URL = 'https://jgyglitvaxmeecxxibpw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_74qSgS-4g1rbBxFaJ66i2g_js2fbHoe';
+
+// ── STATE ────────────────────────────────────────────────────
+let currentUser = null;
+let currentProfile = null;
+let allLocations = [];
+let allAchievements = [];
+let userAchievements = new Set();
+let gpsWatchId = null;
+let userLat = null, userLng = null;
+let map = null, mapInitialized = false;
+let userMarker = null, userCircle = null;
+let locationMarkers = {};
+let pendingCheckin = null;
+let recentlyCheckedIn = new Set();
+let pendingPoints = 0;
+
+// ── BOOT ─────────────────────────────────────────────────────
+async function bootApp() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await loadProfile(session.user.id);
+    enterApp();
+  } else {
+    showScreen('login');
+  }
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN') {
+      await loadProfile(session.user.id);
+      enterApp();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null; currentProfile = null;
+      stopGPS(); showScreen('login');
+    }
+  });
+}
+
+initSupabase(SUPABASE_URL, SUPABASE_KEY);
+
+// ── PROFILE ──────────────────────────────────────────────────
+async function loadProfile(userId) {
+  currentUser = { id: userId };
+  for (let i = 0; i < 3; i++) {
+    const { data } = await sb.from('profiles').select('*').eq('id', userId).single();
+    if (data) { currentProfile = data; return; }
+    await new Promise(r => setTimeout(r, 800));
+  }
+  console.warn('Could not load profile for', userId);
+}
+
+// ── AUTH ─────────────────────────────────────────────────────
+function showScreen(name) {
+  ['login','register','reset','main'].forEach(s =>
+    document.getElementById('screen-'+s).classList.toggle('hidden', s !== name));
+}
+
+function showEl(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'msg ' + (type === 'error' ? 'msg-error' : 'msg-success');
+  el.classList.remove('hidden');
+  if (type !== 'persist') setTimeout(() => el.classList.add('hidden'), 5000);
+}
+
+async function doLogin() {
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Signing in...';
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = 'Sign in';
+  if (error) showEl('login-error', error.message, 'error');
+}
+
+async function doRegister() {
+  const btn = document.getElementById('reg-btn');
+  const name = document.getElementById('reg-name').value.trim();
+  const username = document.getElementById('reg-username').value.trim().toLowerCase();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  if (!name || !username || !email || !password) { showEl('reg-error', 'All fields required', 'error'); return; }
+  if (!/^[a-z0-9_]{3,20}$/.test(username)) { showEl('reg-error', 'Username: 3-20 chars, letters/numbers/underscores', 'error'); return; }
+  btn.disabled = true; btn.textContent = 'Creating...';
+  const { error } = await sb.auth.signUp({ email, password, options: { data: { username, display_name: name } } });
+  btn.disabled = false; btn.textContent = 'Create account';
+  if (error) showEl('reg-error', error.message, 'error');
+  else showEl('reg-success', 'Account created! Sign in below.', 'success');
+}
+
+async function doReset() {
+  const email = document.getElementById('reset-email').value.trim();
+  await sb.auth.resetPasswordForEmail(email);
+  showEl('reset-msg', 'Password reset email sent!', 'success');
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+// ── ENTER APP ────────────────────────────────────────────────
+async function enterApp() {
+  if (!currentProfile) return;
+  showScreen('main');
+  document.getElementById('topbar-user').textContent = currentProfile.display_name;
+  if (currentProfile.is_admin) document.getElementById('admin-tab').classList.remove('hidden');
+  await Promise.all([loadLocations(), loadAchievements()]);
+  setTimeout(() => { initMap(); startGPS(); }, 100);
+  // Show splash once per session
+  if (!sessionStorage.getItem('cp_splash_seen')) {
+    document.getElementById('splash-screen').classList.remove('hidden');
+  }
+  // Handle QR check-in from URL param
+  const urlParams = new URLSearchParams(window.location.search);
+  const qrLocId = urlParams.get('checkin');
+  if (qrLocId) {
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => triggerQRCheckin(qrLocId), 800);
+  }
+}
+
+function dismissSplash() {
+  sessionStorage.setItem('cp_splash_seen', '1');
+  document.getElementById('splash-screen').classList.add('hidden');
+}
+
+// ── LOCATIONS ────────────────────────────────────────────────
+async function loadLocations() {
+  const { data } = await sb.from('locations').select('*').eq('is_active', true).order('name');
+  allLocations = data || [];
+  renderLocationMarkers();
+}
+
+// ── MAP ──────────────────────────────────────────────────────
+function initMap() {
+  if (mapInitialized) return;
+  mapInitialized = true;
+  map = L.map('map', { zoomControl: true }).setView([29.21, -81.02], 12);
+  // Light map tiles
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 19
+  }).addTo(map);
+  renderLocationMarkers();
+}
+
+function makeUserIcon() {
+  return L.divIcon({
+    html: `<div style="width:14px;height:14px;background:#0066cc;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px #0066cc,0 2px 8px rgba(0,102,204,0.4)"></div>`,
+    className: '', iconSize: [14,14], iconAnchor: [7,7]
+  });
+}
+
+function makeLocIcon(visited) {
+  const bg = visited ? '#0066cc' : '#9ca3af';
+  const border = visited ? '#ffffff' : '#ffffff';
+  return L.divIcon({
+    html: `<div style="width:14px;height:14px;background:${bg};border-radius:50%;border:2px solid ${border};box-shadow:0 1px 4px rgba(0,0,0,0.25)"></div>`,
+    className: '', iconSize: [14,14], iconAnchor: [7,7]
+  });
+}
+
+async function renderLocationMarkers() {
+  if (!map) return;
+  Object.values(locationMarkers).forEach(m => { try { m.marker.remove(); m.circle.remove(); } catch {} });
+  locationMarkers = {};
+  let visited = new Set();
+  if (currentUser) {
+    const { data } = await sb.from('check_ins').select('location_id').eq('user_id', currentUser.id);
+    if (data) data.forEach(c => visited.add(c.location_id));
+  }
+  allLocations.forEach(loc => {
+    const isVisited = visited.has(loc.id);
+    const marker = L.marker([loc.lat, loc.lng], { icon: makeLocIcon(isVisited) }).addTo(map);
+    marker.on('click', () => openBottomSheet(loc, isVisited));
+    const circle = L.circle([loc.lat, loc.lng], {
+      radius: loc.radius_meters, color: '#0066cc',
+      fillColor: '#0066cc', fillOpacity: isVisited ? 0.07 : 0.03,
+      weight: isVisited ? 1.5 : 1, opacity: isVisited ? 0.5 : 0.25
+    }).addTo(map);
+    circle.on('click', () => openBottomSheet(loc, isVisited));
+    locationMarkers[loc.id] = { marker, circle };
+  });
+}
+
+// ── GPS ──────────────────────────────────────────────────────
+function startGPS() {
+  if (!navigator.geolocation) { setGps('GPS not supported', 'error'); return; }
+  setGps('Acquiring GPS...', '');
+  gpsWatchId = navigator.geolocation.watchPosition(onGPSUpdate, onGPSError,
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
+}
+
+function stopGPS() {
+  if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null; }
+}
+
+function setGps(msg, state) {
+  document.getElementById('gps-status').textContent = msg;
+  const dot = document.getElementById('gps-dot');
+  dot.className = 'gps-dot' + (state === 'active' ? ' active' : state === 'error' ? ' error' : '');
+}
+
+function onGPSUpdate(pos) {
+  userLat = pos.coords.latitude; userLng = pos.coords.longitude;
+  const acc = Math.round(pos.coords.accuracy);
+  setGps(`GPS active · ${userLat.toFixed(5)}, ${userLng.toFixed(5)} · ±${acc}m`, 'active');
+  const ll = [userLat, userLng];
+  if (!userMarker) {
+    userMarker = L.marker(ll, { icon: makeUserIcon(), zIndexOffset: 1000 }).addTo(map).bindPopup('You are here');
+    userCircle = L.circle(ll, { radius: acc, color: '#0066cc', fillColor: '#0066cc', fillOpacity: 0.05, weight: 1, opacity: 0.3 }).addTo(map);
+    map.setView(ll, 15);
+  } else {
+    userMarker.setLatLng(ll);
+    userCircle.setLatLng(ll).setRadius(acc);
+  }
+  checkProximity();
+}
+
+function onGPSError(err) { setGps('GPS error: ' + err.message, 'error'); }
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+async function checkProximity() {
+  if (pendingCheckin || !currentUser) return;
+  for (const loc of allLocations) {
+    if (recentlyCheckedIn.has(loc.id)) continue;
+    const dist = haversine(userLat, userLng, loc.lat, loc.lng);
+    if (dist <= loc.radius_meters) {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await sb.from('check_ins')
+        .select('id').eq('user_id', currentUser.id).eq('location_id', loc.id)
+        .gte('checked_in_at', today + 'T00:00:00').limit(1);
+      if (data && data.length > 0) { recentlyCheckedIn.add(loc.id); continue; }
+      showCheckinPrompt(loc, dist);
+      return;
+    }
+  }
+}
+
+async function showCheckinPrompt(loc, dist) {
+  pendingCheckin = loc;
+  const streak = currentProfile?.current_streak || 0;
+  let pts = loc.points || 10;
+  if (streak >= 30) pts += 50;
+  else if (streak >= 7) pts += 15;
+  else if (streak >= 3) pts += 5;
+  pendingPoints = pts;
+  document.getElementById('ci-name').textContent = loc.name;
+  const distText = Math.round(dist) + 'm away';
+  const descHtml = loc.description ? linkifyDesc(loc.description) : 'Check in now?';
+  document.getElementById('ci-sub').innerHTML = `${distText} · ${descHtml}`;
+  document.getElementById('ci-points').textContent = `+${pts} pts`;
+  const ciPhoto = document.getElementById('ci-photo');
+  const ciIcon = document.getElementById('ci-icon');
+  if (loc.photo_url) {
+    ciPhoto.src = loc.photo_url;
+    ciPhoto.classList.remove('hidden');
+    ciIcon.classList.add('hidden');
+  } else {
+    ciPhoto.classList.add('hidden');
+    ciIcon.classList.remove('hidden');
+  }
+  document.getElementById('checkin-overlay').classList.remove('hidden');
+}
+
+function dismissCheckin() {
+  if (pendingCheckin) recentlyCheckedIn.add(pendingCheckin.id);
+  pendingCheckin = null;
+  document.getElementById('checkin-overlay').classList.add('hidden');
+}
+
+async function confirmCheckin() {
+  if (!pendingCheckin || !currentUser) return;
+  const btn = document.getElementById('ci-confirm-btn');
+  btn.disabled = true; btn.textContent = 'Checking in...';
+  const loc = pendingCheckin;
+  const dist = (userLat !== null && userLng !== null) ? Math.round(haversine(userLat, userLng, loc.lat, loc.lng)) : null;
+  const { count } = await sb.from('check_ins').select('id', { count: 'exact', head: true }).eq('location_id', loc.id);
+  const isFirst = count === 0;
+  const { error } = await sb.from('check_ins').insert({
+    user_id: currentUser.id, location_id: loc.id,
+    user_lat: userLat || loc.lat, user_lng: userLng || loc.lng, distance_m: dist,
+    points_earned: pendingPoints, was_first: isFirst,
+    streak_day: (currentProfile?.current_streak || 0) + 1
+  });
+  btn.disabled = false; btn.textContent = 'Check in!';
+  if (error) {
+    if (error.code === '23505') alert('Already checked in here today!');
+    else alert('Check-in failed: ' + error.message);
+    dismissCheckin(); return;
+  }
+  recentlyCheckedIn.add(loc.id);
+  pendingCheckin = null;
+  document.getElementById('checkin-overlay').classList.add('hidden');
+  await loadProfile(currentUser.id);
+  renderLocationMarkers();
+  await checkAchievements();
+}
+
+// ── HISTORY ──────────────────────────────────────────────────
+async function renderHistory() {
+  if (!currentUser || !currentProfile) return;
+  const p = currentProfile;
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${p.total_points}</div><div class="stat-label">Points</div></div>
+    <div class="stat-card"><div class="stat-num">${p.total_checkins}</div><div class="stat-label">Check-ins</div></div>
+    <div class="stat-card"><div class="stat-num">${p.unique_locations}</div><div class="stat-label">Locations</div><div class="stat-sub">of ${allLocations.length}</div></div>
+    <div class="stat-card"><div class="stat-num">${p.current_streak}d</div><div class="stat-label">Streak</div><div class="stat-sub">best: ${p.longest_streak}d</div></div>
+  `;
+  const { data: checkins } = await sb.from('check_ins')
+    .select('*, locations(name)').eq('user_id', currentUser.id)
+    .order('checked_in_at', { ascending: false }).limit(50);
+  const list = document.getElementById('history-list');
+  if (!checkins || !checkins.length) {
+    list.innerHTML = '<div class="empty-state">No check-ins yet.<br>Get within range of a location to get started.</div>'; return;
+  }
+  list.innerHTML = '<div class="history-list">' + checkins.map(c => {
+    const dt = new Date(c.checked_in_at);
+    const dateStr = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return `<div class="history-item">
+      <div style="display:flex;align-items:center;gap:0.75rem;flex:1;min-width:0">
+        <div class="history-dot"></div>
+        <div><div class="history-name">${escHtml(c.locations?.name || 'Unknown')}</div>
+        <div class="history-time">${dateStr} · ${timeStr}${c.distance_m ? ` · ${c.distance_m}m away` : ''}</div></div>
+      </div>
+      <div class="history-right">
+        ${c.was_first ? '<span class="badge badge-first">FIRST!</span>' : ''}
+        <span class="badge badge-accent">+${c.points_earned} pts</span>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// ── LEADERBOARD ──────────────────────────────────────────────
+async function renderLeaderboard() {
+  const { data } = await sb.from('leaderboard').select('*').limit(50);
+  const list = document.getElementById('leaderboard-list');
+  if (!data || !data.length) { list.innerHTML = '<div class="empty-state">No users yet.</div>'; return; }
+  const rankEmoji = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
+  const rankClass = r => r <= 3 ? `top${r}` : '';
+  const colors = ['#0066cc','#0ea5e9','#8b5cf6','#ec4899','#f59e0b','#10b981'];
+  list.innerHTML = '<div class="leaderboard-list">' + data.map(u => {
+    const isMe = currentUser && u.id === currentUser.id;
+    const initials = u.display_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+    const color = colors[u.username.charCodeAt(0) % colors.length];
+    return `<div class="lb-item${isMe?' lb-me':''}">
+      <div class="lb-rank ${rankClass(u.rank)}">${rankEmoji(u.rank)}</div>
+      <div class="lb-avatar" style="background:${color}18;color:${color}">${initials}</div>
+      <div class="lb-info">
+        <div class="lb-name">${escHtml(u.display_name)}${isMe ? ' <span style="font-size:0.62rem;color:var(--muted);font-family:var(--mono)">(you)</span>' : ''}</div>
+        <div class="lb-sub">${u.total_checkins} check-ins · ${u.unique_locations} locations · ${u.current_streak}d streak</div>
+      </div>
+      <div style="text-align:right">
+        <div class="lb-points">${u.total_points}</div>
+        <div class="lb-pts-label">points</div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+// ── ACHIEVEMENTS ─────────────────────────────────────────────
+async function loadAchievements() {
+  const { data: ach } = await sb.from('achievements').select('*');
+  allAchievements = ach || [];
+  if (currentUser) {
+    const { data: ua } = await sb.from('user_achievements').select('achievement_id').eq('user_id', currentUser.id);
+    userAchievements = new Set((ua || []).map(a => a.achievement_id));
+  }
+}
+
+function renderAchievements() {
+  const grid = document.getElementById('achievements-grid');
+  if (!allAchievements.length) { grid.innerHTML = '<div class="empty-state">No achievements configured.</div>'; return; }
+  grid.innerHTML = allAchievements.map(a => {
+    const unlocked = userAchievements.has(a.id);
+    return `<div class="achievement-card${unlocked?' unlocked':''}">
+      ${a.photo_url ? `<img class="ach-img" src="${a.photo_url}" alt="${escHtml(a.name)}">` : ''}
+      <div class="ach-body">
+        <span class="ach-icon">${a.icon}</span>
+        <div class="ach-name">${escHtml(a.name)}</div>
+        <div class="ach-desc">${escHtml(a.description)}</div>
+        ${a.points ? `<div class="ach-pts">+${a.points} bonus pts</div>` : ''}
+        ${unlocked ? `<div class="ach-unlocked-badge">✓ Unlocked</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function checkAchievements() {
+  if (!currentProfile || !currentUser) return;
+  const p = currentProfile;
+  const toUnlock = [];
+
+  for (const a of allAchievements) {
+    // Skip already unlocked
+    if (userAchievements.has(a.id)) continue;
+
+    const t = a.trigger_type || 'manual';
+    const threshold = a.trigger_threshold || 0;
+    let earned = false;
+
+    // Dynamic trigger evaluation — works for all achievements including new ones
+    if      (t === 'checkins_total')  earned = p.total_checkins >= threshold;
+    else if (t === 'locations_total') earned = p.unique_locations >= threshold;
+    else if (t === 'streak_days')     earned = p.current_streak >= threshold;
+    else if (t === 'points_total')    earned = p.total_points >= threshold;
+    // 'manual' achievements are only awarded by admins — skip auto-check
+
+    if (earned) toUnlock.push(a);
+  }
+
+  if (toUnlock.length) {
+    // Insert unlock records
+    await sb.from('user_achievements').insert(
+      toUnlock.map(a => ({ user_id: currentUser.id, achievement_id: a.id }))
+    );
+
+    // Award bonus points for each achievement that has them
+    const bonusPoints = toUnlock.reduce((sum, a) => sum + (a.points || 0), 0);
+    if (bonusPoints > 0) {
+      await sb.from('profiles').update({
+        total_points: p.total_points + bonusPoints
+      }).eq('id', currentUser.id);
+      // Reload profile so points reflect immediately
+      await loadProfile(currentUser.id);
+    }
+
+    toUnlock.forEach(a => userAchievements.add(a.id));
+    renderAchievements();
+
+    // Show unlock toast for each achievement earned
+    toUnlock.forEach(a => showAchievementToast(a));
+  }
+}
+
+function showAchievementToast(a) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position:fixed; bottom:1.5rem; left:50%; transform:translateX(-50%);
+    background:#1a1a2e; color:#fff; border-radius:12px; padding:0.75rem 1.25rem;
+    display:flex; align-items:center; gap:0.75rem; z-index:9998;
+    box-shadow:0 8px 32px rgba(0,0,0,0.25); font-family:'Syne',sans-serif;
+    animation:toastIn 0.3s ease; max-width:90vw;
+  `;
+  toast.innerHTML = `
+    <span style="font-size:1.5rem">${a.icon}</span>
+    <div>
+      <div style="font-size:0.7rem;color:rgba(255,255,255,0.6);font-family:monospace;margin-bottom:2px">Achievement unlocked!</div>
+      <div style="font-weight:700;font-size:0.9rem">${escHtml(a.name)}</div>
+      ${a.points ? `<div style="font-size:0.7rem;color:#60a5fa;font-family:monospace">+${a.points} bonus pts</div>` : ''}
+    </div>
+  `;
+  if (!document.getElementById('toast-style')) {
+    const s = document.createElement('style');
+    s.id = 'toast-style';
+    s.textContent = '@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+    document.head.appendChild(s);
+  }
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity='0'; toast.style.transition='opacity 0.4s'; setTimeout(() => toast.remove(), 400); }, 3500);
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────
+async function renderAdmin() {
+  // Always reload fresh from DB so newly added locations appear immediately
+  await loadLocations();
+  const locs = allLocations;
+  document.getElementById('loc-count').textContent = locs.length;
+  const list = document.getElementById('admin-location-list');
+  list.innerHTML = locs.length ? locs.map(loc => `
+    <div class="location-row" id="loc-row-${loc.id}">
+      ${loc.photo_url ? `<img src="${loc.photo_url}" style="width:44px;height:44px;object-fit:cover;border-radius:7px;flex-shrink:0;border:1px solid var(--border)" alt="">` : ''}
+      <div class="location-row-info">
+        <div class="location-row-name">${escHtml(loc.name)}</div>
+        <div class="location-row-meta">${loc.lat.toFixed(5)}, ${loc.lng.toFixed(5)} · ${loc.radius_meters}m · ${loc.points}pts</div>
+      </div>
+      <div class="location-row-actions">
+        <button class="btn btn-ghost btn-sm" onclick="flyTo(${loc.lat},${loc.lng})">View</button>
+        <button class="btn btn-ghost btn-sm" onclick="adminEditLocation('${loc.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="adminDeleteLocation('${loc.id}')">Del</button>
+      </div>
+    </div>
+    <div class="edit-row hidden" id="edit-row-${loc.id}">
+      <div class="inline-form" style="padding:0.75rem;background:var(--surface2);border-radius:9px;margin-bottom:0.4rem;">
+        <input type="text" id="edit-name-${loc.id}" value="${escHtml(loc.name)}" placeholder="Name">
+        <textarea id="edit-desc-${loc.id}" rows="3" placeholder="Description (optional). Paste a URL to make it a clickable link." style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:0.6rem 0.8rem;color:var(--text);font-size:0.875rem;font-family:var(--sans);outline:none;resize:vertical;">${escHtml(loc.description||'')}</textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <input type="number" id="edit-radius-${loc.id}" value="${loc.radius_meters}" placeholder="Radius (m)">
+          <input type="number" id="edit-points-${loc.id}" value="${loc.points}" placeholder="Points">
+        </div>
+        ${loc.photo_url ? `<img id="edit-current-photo-${loc.id}" src="${loc.photo_url}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)" alt="Current photo">` : ''}
+        <label class="photo-upload-label" for="edit-photo-${loc.id}" id="edit-photo-label-${loc.id}">
+          📷 ${loc.photo_url ? 'Replace photo (optional)' : 'Add a photo (optional)'}
+        </label>
+        <input type="file" id="edit-photo-${loc.id}" accept="image/*" style="display:none" onchange="previewEditPhoto(this, '${loc.id}')">
+        <img id="edit-photo-preview-${loc.id}" class="photo-preview" alt="New photo preview">
+        <div style="display:flex;gap:0.5rem;margin-top:0.25rem">
+          <button class="btn btn-primary" style="flex:1;margin-top:0" onclick="adminSaveEdit('${loc.id}')">Save</button>
+          <button class="btn btn-ghost" style="flex:1" onclick="adminCancelEdit('${loc.id}')">Cancel</button>
+        </div>
+        <div id="edit-msg-${loc.id}" class="msg hidden"></div>
+      </div>
+    </div>`).join('') : '<div class="empty-state" style="padding:1rem 0">No locations yet</div>';
+
+  const { data: rules } = await sb.from('scoring_rules').select('*').order('key');
+  document.getElementById('scoring-rules-list').innerHTML = (rules || []).map(r =>
+    `<div class="scoring-row"><span class="scoring-key">${r.key.replace(/_/g,' ')}</span><span class="scoring-val">${r.value}</span></div>`
+  ).join('');
+
+  // Achievements
+  const { data: achs } = await sb.from('achievements').select('*').order('name');
+  const achList = document.getElementById('admin-achievement-list');
+  document.getElementById('ach-count').textContent = (achs || []).length;
+  achList.innerHTML = (achs || []).length ? (achs || []).map(a => `
+    <div class="location-row" id="ach-row-${a.id}">
+      <div style="font-size:1.5rem;flex-shrink:0;line-height:1">${a.icon}</div>
+      <div class="location-row-info">
+        <div class="location-row-name">${escHtml(a.name)}</div>
+        <div class="location-row-meta">${escHtml(a.description)}${a.points ? ` · +${a.points} pts` : ''}</div>
+      </div>
+      <div class="location-row-actions">
+        <button class="btn btn-ghost btn-sm" onclick="adminEditAchievement('${a.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="adminDeleteAchievement('${a.id}')">Del</button>
+      </div>
+    </div>
+    <div class="edit-row hidden" id="ach-edit-row-${a.id}">
+      <div class="inline-form" style="padding:0.75rem;background:var(--surface2);border-radius:9px;margin-bottom:0.4rem;">
+        <div class="form-row">
+          <input type="text" id="ach-edit-icon-${a.id}" value="${escHtml(a.icon)}" placeholder="Icon emoji" maxlength="4">
+          <input type="text" id="ach-edit-key-${a.id}" value="${escHtml(a.key)}" placeholder="Unique key">
+        </div>
+        <input type="text" id="ach-edit-name-${a.id}" value="${escHtml(a.name)}" placeholder="Name">
+        <input type="text" id="ach-edit-desc-${a.id}" value="${escHtml(a.description)}" placeholder="Description">
+        <input type="number" id="ach-edit-points-${a.id}" value="${a.points}" placeholder="Bonus points">
+        <select id="ach-edit-trigger-${a.id}">
+          <option value="manual"${(a.trigger_type||'manual')==='manual'?' selected':''}>Manual (admin awards only)</option>
+          <option value="checkins_total"${a.trigger_type==='checkins_total'?' selected':''}>Auto — total check-ins reaches...</option>
+          <option value="locations_total"${a.trigger_type==='locations_total'?' selected':''}>Auto — unique locations reaches...</option>
+          <option value="streak_days"${a.trigger_type==='streak_days'?' selected':''}>Auto — streak days reaches...</option>
+          <option value="points_total"${a.trigger_type==='points_total'?' selected':''}>Auto — total points reaches...</option>
+        </select>
+        <input type="number" id="ach-edit-threshold-${a.id}" value="${a.trigger_threshold||0}" placeholder="Threshold number">
+        ${a.photo_url ? `<img id="ach-current-photo-${a.id}" src="${a.photo_url}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)" alt="Current image">` : ''}
+        <label class="photo-upload-label" for="ach-edit-photo-${a.id}" id="ach-edit-photo-label-${a.id}">
+          📷 ${a.photo_url ? 'Replace image (optional)' : 'Add image (optional)'}
+        </label>
+        <input type="file" id="ach-edit-photo-${a.id}" accept="image/*" style="display:none" onchange="previewAchievementPhoto(this,'${a.id}')">
+        <img id="ach-edit-photo-preview-${a.id}" class="photo-preview" alt="New image preview">
+        <div style="display:flex;gap:0.5rem;margin-top:0.25rem">
+          <button class="btn btn-primary" style="flex:1;margin-top:0" onclick="adminSaveAchievement('${a.id}')">Save</button>
+          <button class="btn btn-ghost" style="flex:1" onclick="adminCancelAchievement('${a.id}')">Cancel</button>
+        </div>
+        <div id="ach-edit-msg-${a.id}" class="msg hidden"></div>
+      </div>
+    </div>`).join('') : '<div class="empty-state" style="padding:1rem 0">No achievements yet</div>';
+}
+
+async function adminAddLocation() {
+  const name = document.getElementById('loc-name').value.trim();
+  const lat = parseFloat(document.getElementById('loc-lat').value);
+  const lng = parseFloat(document.getElementById('loc-lng').value);
+  const radius = parseInt(document.getElementById('loc-radius').value) || 100;
+  const points = parseInt(document.getElementById('loc-points').value) || 10;
+  const desc = document.getElementById('loc-desc').value.trim();
+  const photoFile = document.getElementById('loc-photo').files[0];
+  if (!name) { showEl('loc-msg', 'Location name is required', 'error'); return; }
+  if (isNaN(lat) || isNaN(lng)) { showEl('loc-msg', 'Latitude and longitude are required', 'error'); return; }
+
+  showEl('loc-msg', photoFile ? 'Uploading photo...' : 'Saving...', 'success');
+
+  // Upload photo if provided
+  let photo_url = null;
+  if (photoFile) {
+    const ext = photoFile.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { data: uploadData, error: uploadError } = await sb.storage
+      .from('location-photos').upload(fileName, photoFile, { cacheControl: '3600', upsert: false });
+    if (uploadError) { showEl('loc-msg', 'Photo upload failed: ' + uploadError.message, 'error'); return; }
+    const { data: urlData } = sb.storage.from('location-photos').getPublicUrl(fileName);
+    photo_url = urlData.publicUrl;
+  }
+
+  const { error } = await sb.from('locations').insert({
+    name, description: desc, lat, lng,
+    radius_meters: radius, points, photo_url, created_by: currentUser.id
+  });
+  if (error) { showEl('loc-msg', error.message, 'error'); return; }
+  showEl('loc-msg', `"${name}" added!`, 'success');
+
+  // Clear fields
+  ['loc-name','loc-lat','loc-lng'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('loc-desc').value = '';
+  document.getElementById('loc-radius').value = '100';
+  document.getElementById('loc-points').value = '10';
+  document.getElementById('loc-photo').value = '';
+  const preview = document.getElementById('loc-photo-preview');
+  preview.src = ''; preview.classList.remove('visible');
+
+  await loadLocations();
+  await renderAdmin();
+}
+
+function adminEditLocation(id) {
+  // Hide any other open edit rows first
+  document.querySelectorAll('.edit-row').forEach(r => r.classList.add('hidden'));
+  document.getElementById('edit-row-' + id).classList.remove('hidden');
+  document.getElementById('edit-name-' + id).focus();
+}
+
+function adminCancelEdit(id) {
+  document.getElementById('edit-row-' + id).classList.add('hidden');
+}
+
+async function adminSaveEdit(id) {
+  const name = document.getElementById('edit-name-' + id).value.trim();
+  const desc = document.getElementById('edit-desc-' + id).value.trim();
+  const radius = parseInt(document.getElementById('edit-radius-' + id).value) || 100;
+  const points = parseInt(document.getElementById('edit-points-' + id).value) || 10;
+  const photoFileEl = document.getElementById('edit-photo-' + id);
+  const photoFile = photoFileEl ? photoFileEl.files[0] : null;
+  const msgEl = document.getElementById('edit-msg-' + id);
+
+  if (!name) { msgEl.textContent = 'Name required'; msgEl.className = 'msg msg-error'; msgEl.classList.remove('hidden'); return; }
+
+  msgEl.textContent = photoFile ? 'Uploading photo...' : 'Saving...';
+  msgEl.className = 'msg msg-success';
+  msgEl.classList.remove('hidden');
+
+  // Upload new photo if one was selected
+  let updateData = { name, description: desc, radius_meters: radius, points };
+  if (photoFile) {
+    const ext = photoFile.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: uploadError } = await sb.storage
+      .from('location-photos').upload(fileName, photoFile, { cacheControl: '3600', upsert: false });
+    if (uploadError) { msgEl.textContent = 'Photo upload failed: ' + uploadError.message; msgEl.className = 'msg msg-error'; return; }
+    const { data: urlData } = sb.storage.from('location-photos').getPublicUrl(fileName);
+    updateData.photo_url = urlData.publicUrl;
+  }
+
+  const { error } = await sb.from('locations').update(updateData).eq('id', id);
+  if (error) { msgEl.textContent = error.message; msgEl.className = 'msg msg-error'; return; }
+  await loadLocations();
+  await renderAdmin();
+}
+
+// ── ACHIEVEMENT ADMIN ────────────────────────────────────────
+async function adminAddAchievement() {
+  const icon = document.getElementById('ach-icon').value.trim() || '🏆';
+  const key = document.getElementById('ach-key').value.trim().toLowerCase().replace(/ /g,'_');
+  const name = document.getElementById('ach-name').value.trim();
+  const desc = document.getElementById('ach-desc').value.trim();
+  const points = parseInt(document.getElementById('ach-points').value) || 0;
+  const trigger_type = document.getElementById('ach-trigger').value;
+  const trigger_threshold = parseInt(document.getElementById('ach-threshold').value) || 0;
+  const photoFile = document.getElementById('ach-photo').files[0];
+  if (!key) { showEl('ach-msg', 'Unique key is required', 'error'); return; }
+  if (!name) { showEl('ach-msg', 'Name is required', 'error'); return; }
+  if (!desc) { showEl('ach-msg', 'Description is required', 'error'); return; }
+
+  showEl('ach-msg', photoFile ? 'Uploading image...' : 'Saving...', 'success');
+
+  let photo_url = null;
+  if (photoFile) {
+    const ext = photoFile.name.split('.').pop();
+    const fileName = `ach-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await sb.storage.from('location-photos').upload(fileName, photoFile, { cacheControl: '3600', upsert: false });
+    if (upErr) { showEl('ach-msg', 'Image upload failed: ' + upErr.message, 'error'); return; }
+    const { data: urlData } = sb.storage.from('location-photos').getPublicUrl(fileName);
+    photo_url = urlData.publicUrl;
+  }
+
+  const { error } = await sb.from('achievements').insert({ icon, key, name, description: desc, points, trigger_type, trigger_threshold, photo_url });
+  if (error) { showEl('ach-msg', error.message, 'error'); return; }
+  showEl('ach-msg', `"${name}" added!`, 'success');
+  ['ach-icon','ach-key','ach-name','ach-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ach-points').value = '0';
+  document.getElementById('ach-threshold').value = '0';
+  document.getElementById('ach-trigger').value = 'manual';
+  document.getElementById('ach-photo').value = '';
+  const prev = document.getElementById('ach-photo-preview');
+  prev.src = ''; prev.classList.remove('visible');
+  await loadAchievements();
+  await renderAdmin();
+}
+
+function adminEditAchievement(id) {
+  document.querySelectorAll('.edit-row').forEach(r => r.classList.add('hidden'));
+  document.getElementById('ach-edit-row-' + id).classList.remove('hidden');
+  document.getElementById('ach-edit-name-' + id).focus();
+}
+
+function adminCancelAchievement(id) {
+  document.getElementById('ach-edit-row-' + id).classList.add('hidden');
+}
+
+async function adminSaveAchievement(id) {
+  const icon = document.getElementById('ach-edit-icon-' + id).value.trim() || '🏆';
+  const key = document.getElementById('ach-edit-key-' + id).value.trim().toLowerCase().replace(/ /g,'_');
+  const name = document.getElementById('ach-edit-name-' + id).value.trim();
+  const desc = document.getElementById('ach-edit-desc-' + id).value.trim();
+  const points = parseInt(document.getElementById('ach-edit-points-' + id).value) || 0;
+  const trigger_type = document.getElementById('ach-edit-trigger-' + id).value;
+  const trigger_threshold = parseInt(document.getElementById('ach-edit-threshold-' + id).value) || 0;
+  const photoFile = document.getElementById('ach-edit-photo-' + id).files[0];
+  const msgEl = document.getElementById('ach-edit-msg-' + id);
+  if (!name) { msgEl.textContent = 'Name required'; msgEl.className = 'msg msg-error'; msgEl.classList.remove('hidden'); return; }
+
+  msgEl.textContent = photoFile ? 'Uploading image...' : 'Saving...';
+  msgEl.className = 'msg msg-success'; msgEl.classList.remove('hidden');
+
+  let updateData = { icon, key, name, description: desc, points, trigger_type, trigger_threshold };
+  if (photoFile) {
+    const ext = photoFile.name.split('.').pop();
+    const fileName = `ach-${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error: upErr } = await sb.storage.from('location-photos').upload(fileName, photoFile, { cacheControl: '3600', upsert: false });
+    if (upErr) { msgEl.textContent = 'Image upload failed: ' + upErr.message; msgEl.className = 'msg msg-error'; return; }
+    const { data: urlData } = sb.storage.from('location-photos').getPublicUrl(fileName);
+    updateData.photo_url = urlData.publicUrl;
+  }
+
+  const { error } = await sb.from('achievements').update(updateData).eq('id', id);
+  if (error) { msgEl.textContent = error.message; msgEl.className = 'msg msg-error'; return; }
+  await loadAchievements();
+  await renderAdmin();
+}
+
+async function adminDeleteAchievement(id) {
+  if (!confirm('Delete this achievement? Users who have earned it will keep it but it will no longer be awarded.')) return;
+  const { error } = await sb.from('achievements').delete().eq('id', id);
+  if (error) { alert(error.message); return; }
+  await loadAchievements();
+  await renderAdmin();
+}
+
+async function adminDeleteLocation(id) {
+  if (!confirm('Delete this location? Check-in history will remain.')) return;
+  await sb.from('locations').update({ is_active: false }).eq('id', id);
+  await loadLocations();
+  await renderAdmin();
+}
+
+function previewPhoto(input) {
+  const preview = document.getElementById('loc-photo-preview');
+  const label = document.querySelector('.photo-upload-label');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.classList.add('visible');
+      label.innerHTML = '✓ Photo selected — click to change';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function previewAchievementPhoto(input, id) {
+  const isAdd = id === 'add';
+  const preview = isAdd ? document.getElementById('ach-photo-preview') : document.getElementById('ach-edit-photo-preview-' + id);
+  const label = isAdd ? document.querySelector('label[for="ach-photo"]') : document.getElementById('ach-edit-photo-label-' + id);
+  const current = isAdd ? null : document.getElementById('ach-current-photo-' + id);
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.classList.add('visible');
+      if (current) current.style.display = 'none';
+      if (label) label.innerHTML = '✓ Image selected — click to change';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function previewEditPhoto(input, id) {
+  const preview = document.getElementById('edit-photo-preview-' + id);
+  const label = document.getElementById('edit-photo-label-' + id);
+  const currentPhoto = document.getElementById('edit-current-photo-' + id);
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.classList.add('visible');
+      if (currentPhoto) currentPhoto.style.display = 'none';
+      label.innerHTML = '✓ New photo selected — click to change';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function fillMyLocation() {
+  if (userLat !== null && userLng !== null) {
+    document.getElementById('loc-lat').value = userLat.toFixed(6);
+    document.getElementById('loc-lng').value = userLng.toFixed(6);
+    showEl('loc-msg', 'Coordinates filled from your current GPS position', 'success');
+  } else {
+    showEl('loc-msg', 'GPS not available yet — check the GPS bar at the top', 'error');
+  }
+}
+
+async function adminPromote() {
+  const username = document.getElementById('promote-email').value.trim().toLowerCase();
+  if (!username) return;
+  const { data, error } = await sb.from('profiles').update({ is_admin: true }).eq('username', username).select();
+  if (error || !data || data.length === 0) {
+    showEl('promote-msg', 'User not found. Check the username and try again.', 'error');
+  } else {
+    showEl('promote-msg', `${username} now has admin access`, 'success');
+    document.getElementById('promote-email').value = '';
+  }
+}
+
+function flyTo(lat, lng) {
+  if (!map) return;
+  switchTab('map');
+  map.flyTo([lat, lng], 16);
+}
+
+function openBottomSheet(loc, isVisited) {
+  const img = document.getElementById('bs-img');
+  if (loc.photo_url) {
+    img.src = loc.photo_url;
+    img.classList.remove('hidden');
+  } else {
+    img.src = '';
+    img.classList.add('hidden');
+  }
+  document.getElementById('bs-name').textContent = loc.name;
+  const descEl = document.getElementById('bs-desc');
+  descEl.innerHTML = loc.description ? linkifyDesc(loc.description) : '<span style="color:var(--muted);font-style:italic">No description</span>';
+  document.getElementById('bs-pts').textContent = `${loc.points} pts · ${loc.radius_meters}m radius`;
+  const statusEl = document.getElementById('bs-status');
+  statusEl.textContent = isVisited ? '✓ Visited' : 'Not visited yet';
+  statusEl.className = 'bs-status ' + (isVisited ? 'visited' : 'not-visited');
+  document.getElementById('bs-overlay').classList.add('open');
+  document.getElementById('bs-sheet').classList.add('open');
+}
+
+function closeBottomSheet() {
+  document.getElementById('bs-overlay').classList.remove('open');
+  document.getElementById('bs-sheet').classList.remove('open');
+}
+
+// ── NAV ──────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
+  if (tab === 'map' && map) setTimeout(() => map.invalidateSize(), 50);
+  if (tab === 'history') renderHistory();
+  if (tab === 'leaderboard') renderLeaderboard();
+  if (tab === 'achievements') { loadAchievements().then(renderAchievements); }
+  if (tab === 'admin') renderAdmin();
+  if (tab !== 'qrscan') stopQRScanner();
+}
+
+// ── UTILS ────────────────────────────────────────────────────
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function linkifyDesc(text) {
+  if (!text) return '';
+  const escaped = escHtml(text);
+  // Match http/https URLs and wrap in anchor tags that open in a new tab
+  return escaped.replace(
+    /(https?:\/\/[^\s&]+)/g,
+    '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#0066cc;text-decoration:underline;word-break:break-all">$1</a>'
+  );
+}
+
+// ── QR SCANNER ───────────────────────────────────────────────
+let qrStream = null;
+let qrAnimFrame = null;
+let qrScanning = false;
+
+async function startQRScanner() {
+  const video = document.getElementById('qr-video');
+  const wrap = document.getElementById('qr-viewport-wrap');
+  const startBtn = document.getElementById('qr-start-btn');
+  const stopBtn = document.getElementById('qr-stop-btn');
+  setQrStatus('Starting camera...', '');
+  try {
+    qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    video.srcObject = qrStream;
+    await video.play();
+    wrap.classList.remove('hidden');
+    startBtn.classList.add('hidden');
+    stopBtn.classList.remove('hidden');
+    qrScanning = true;
+    setQrStatus('Scanning — hold QR code steady', '');
+    scanQRFrame();
+  } catch (err) {
+    setQrStatus('Camera access denied: ' + err.message, 'error');
+  }
+}
+
+function stopQRScanner() {
+  qrScanning = false;
+  if (qrAnimFrame) { cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
+  if (qrStream) { qrStream.getTracks().forEach(t => t.stop()); qrStream = null; }
+  const video = document.getElementById('qr-video');
+  video.srcObject = null;
+  document.getElementById('qr-viewport-wrap').classList.add('hidden');
+  document.getElementById('qr-start-btn').classList.remove('hidden');
+  document.getElementById('qr-stop-btn').classList.add('hidden');
+  setQrStatus('Ready to scan', '');
+}
+
+function setQrStatus(msg, cls) {
+  const el = document.getElementById('qr-status');
+  el.textContent = msg;
+  el.className = 'qr-status' + (cls ? ' ' + cls : '');
+}
+
+function scanQRFrame() {
+  if (!qrScanning) return;
+  const video = document.getElementById('qr-video');
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Use BarcodeDetector API if available (Chrome/Android)
+    if ('BarcodeDetector' in window) {
+      const detector = new BarcodeDetector({ formats: ['qr_code'] });
+      detector.detect(canvas).then(codes => {
+        if (codes.length > 0) handleQRResult(codes[0].rawValue);
+        else qrAnimFrame = requestAnimationFrame(scanQRFrame);
+      }).catch(() => { qrAnimFrame = requestAnimationFrame(scanQRFrame); });
+    } else {
+      // Fallback: jsQR library
+      if (window.jsQR) {
+        const code = jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) handleQRResult(code.data);
+        else qrAnimFrame = requestAnimationFrame(scanQRFrame);
+      } else {
+        setQrStatus('QR scanning not supported on this browser. Try Chrome or Safari.', 'error');
+      }
+    }
+  } else {
+    qrAnimFrame = requestAnimationFrame(scanQRFrame);
+  }
+}
+
+async function handleQRResult(rawValue) {
+  qrScanning = false;
+  stopQRScanner();
+  // Extract location ID from URL like .../checkpoint?checkin=LOCATION_ID
+  try {
+    const url = new URL(rawValue);
+    const locId = url.searchParams.get('checkin');
+    if (!locId) { setQrStatus('Invalid QR code — not a CheckPoint location', 'error'); return; }
+    await triggerQRCheckin(locId);
+  } catch {
+    setQrStatus('Invalid QR code format', 'error');
+  }
+}
+
+async function triggerQRCheckin(locId) {
+  if (!currentUser) { setQrStatus('Please sign in first', 'error'); return; }
+  const loc = allLocations.find(l => l.id === locId);
+  if (!loc) {
+    // Try fetching from DB in case locations aren't loaded yet
+    const { data } = await sb.from('locations').select('*').eq('id', locId).eq('is_active', true).single();
+    if (!data) { setQrStatus('Location not found or inactive', 'error'); return; }
+    allLocations.push(data);
+    setQrStatus('');
+    showCheckinPromptQR(data);
+    return;
+  }
+  // Check already checked in today
+  const today = new Date().toISOString().split('T')[0];
+  const { data: existing } = await sb.from('check_ins')
+    .select('id').eq('user_id', currentUser.id).eq('location_id', loc.id)
+    .gte('checked_in_at', today + 'T00:00:00').limit(1);
+  if (existing && existing.length > 0) {
+    setQrStatus('Already checked in here today!', 'error');
+    return;
+  }
+  showCheckinPromptQR(loc);
+}
+
+function showCheckinPromptQR(loc) {
+  const streak = currentProfile?.current_streak || 0;
+  let pts = loc.points || 10;
+  if (streak >= 30) pts += 50;
+  else if (streak >= 7) pts += 15;
+  else if (streak >= 3) pts += 5;
+  pendingPoints = pts;
+  pendingCheckin = loc;
+  document.getElementById('ci-name').textContent = loc.name;
+  document.getElementById('ci-sub').innerHTML = `QR check-in · ${loc.description ? linkifyDesc(loc.description) : 'Check in now?'}`;
+  document.getElementById('ci-points').textContent = `+${pts} pts`;
+  const ciPhoto = document.getElementById('ci-photo');
+  const ciIcon = document.getElementById('ci-icon');
+  if (loc.photo_url) {
+    ciPhoto.src = loc.photo_url;
+    ciPhoto.classList.remove('hidden');
+    ciIcon.classList.add('hidden');
+  } else {
+    ciPhoto.classList.add('hidden');
+    ciIcon.classList.remove('hidden');
+  }
+  document.getElementById('checkin-overlay').classList.remove('hidden');
+}
+
+// ── QR CODE GENERATOR ────────────────────────────────────────
+async function renderQRCodes() {
+  // Load qrcode.js from CDN
+  if (!window.QRCode) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+  const baseUrl = window.location.href.split('?')[0];
+  const grid = document.getElementById('qr-codes-grid');
+  grid.innerHTML = '';
+  allLocations.forEach(loc => {
+    const url = `${baseUrl}?checkin=${loc.id}`;
+    const card = document.createElement('div');
+    card.className = 'qr-code-card';
+    const qrDiv = document.createElement('div');
+    card.appendChild(qrDiv);
+    const nameEl = document.createElement('div');
+    nameEl.className = 'qr-code-name';
+    nameEl.textContent = loc.name;
+    card.appendChild(nameEl);
+    const dlEl = document.createElement('div');
+    dlEl.className = 'qr-code-dl';
+    dlEl.textContent = 'Download PNG';
+    dlEl.onclick = () => downloadQR(qrDiv, loc.name);
+    card.appendChild(dlEl);
+    grid.appendChild(card);
+    new QRCode(qrDiv, { text: url, width: 160, height: 160, colorDark: '#1a1a2e', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  });
+}
+
+function downloadQR(qrDiv, name) {
+  const canvas = qrDiv.querySelector('canvas');
+  if (!canvas) { const img = qrDiv.querySelector('img'); if (img) { const a = document.createElement('a'); a.href = img.src; a.download = name.replace(/[^a-z0-9]/gi,'_') + '_QR.png'; a.click(); } return; }
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = name.replace(/[^a-z0-9]/gi,'_') + '_QR.png';
+  a.click();
+}
+
+// ── PWA SERVICE WORKER ───────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  const swCode = `
+    const CACHE = 'checkpoint-db-v1';
+    const PRECACHE = [
+      'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+      'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
+    ];
+    self.addEventListener('install', e => {
+      e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE).catch(() => {})));
+      self.skipWaiting();
+    });
+    self.addEventListener('activate', e => {
+      e.waitUntil(caches.keys().then(keys =>
+        Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+      ));
+      self.clients.claim();
+    });
+    self.addEventListener('fetch', e => {
+      if (e.request.url.includes('supabase.co')) return;
+      e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    });
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+}
+</script>
+</body>
+</html>
