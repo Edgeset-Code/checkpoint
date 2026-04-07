@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cookie &amp; Data Notice — Victory Lap Trail</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f9f9f7; color: #1a1a1a; line-height: 1.7; font-size: 16px; }
+  .topbar { background: #0066cc; color: #fff; padding: 1rem 2rem; font-size: 0.85rem; }
+  .topbar a { color: #cce4ff; text-decoration: none; }
+  .topbar a:hover { text-decoration: underline; }
+  .hero { background: #0066cc; color: #fff; padding: 3rem 2rem 2.5rem; }
+  .hero .app { font-size: 1rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.75; margin-bottom: 0.5rem; }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .hero .meta { font-size: 0.9rem; opacity: 0.7; }
+  .container { max-width: 780px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+  h2 { font-size: 1.25rem; font-weight: 700; color: #0066cc; margin: 2.5rem 0 0.6rem; border-bottom: 2px solid #e0eeff; padding-bottom: 0.4rem; }
+  h3 { font-size: 1rem; font-weight: 700; color: #333; margin: 1.5rem 0 0.4rem; }
+  p { margin-bottom: 1rem; color: #333; }
+  ul { margin: 0.5rem 0 1rem 1.5rem; }
+  li { margin-bottom: 0.4rem; color: #333; }
+  .table-wrap { overflow-x: auto; margin: 1rem 0 1.5rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th { background: #0066cc; color: #fff; padding: 0.6rem 0.9rem; text-align: left; font-weight: 600; }
+  td { padding: 0.6rem 0.9rem; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
+  tr:nth-child(even) td { background: #f4f7ff; }
+  .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 99px; }
+  .tag-yes { background: #d1fae5; color: #065f46; }
+  .tag-no { background: #fee2e2; color: #991b1b; }
+  .footer { text-align: center; font-size: 0.82rem; color: #999; padding: 2rem; border-top: 1px solid #eee; }
+  @media(max-width:600px) { .hero h1 { font-size: 1.6rem; } .container { padding: 1.5rem 1.25rem 3rem; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html">← Back to Victory Lap Trail</a>
+</div>
+
+<div class="hero">
+  <div class="app">Victory Lap Trail</div>
+  <h1>Cookie &amp; Data Storage Notice</h1>
+  <div class="meta">Edgeset Marketing, LLC &nbsp;·&nbsp; Effective Date: April 7, 2025</div>
+</div>
+
+<div class="container">
+
+  <p>Victory Lap Trail is a web-based progressive web application (PWA). This notice explains what data is stored locally on your device and what is stored on our servers. We do not use advertising cookies or third-party tracking.</p>
+
+  <h2>At a Glance</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Data Type</th>
+          <th>Stored On Device?</th>
+          <th>Stored On Server?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Auth session token</td><td><span class="tag tag-yes">Yes — localStorage</span></td><td><span class="tag tag-yes">Yes</span></td></tr>
+        <tr><td>Username &amp; email</td><td><span class="tag tag-no">No</span></td><td><span class="tag tag-yes">Yes</span></td></tr>
+        <tr><td>Check-in history</td><td><span class="tag tag-no">No</span></td><td><span class="tag tag-yes">Yes</span></td></tr>
+        <tr><td>GPS coordinates (at check-in)</td><td><span class="tag tag-no">No</span></td><td><span class="tag tag-yes">Yes</span></td></tr>
+        <tr><td>App files (PWA cache)</td><td><span class="tag tag-yes">Yes — service worker</span></td><td><span class="tag tag-no">N/A</span></td></tr>
+        <tr><td>Camera images / video</td><td><span class="tag tag-no">Never stored</span></td><td><span class="tag tag-no">Never stored</span></td></tr>
+        <tr><td>Advertising cookies</td><td><span class="tag tag-no">None</span></td><td><span class="tag tag-no">None</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>1. What Is Stored on Your Device</h2>
+
+  <h3>Session Storage</h3>
+  <p>We do not use sessionStorage for persistent data. Session state is managed by the Supabase authentication library in memory only and is cleared when you close the browser tab.</p>
+
+  <h3>localStorage</h3>
+  <p>We do not store personal data in localStorage. The Supabase JS SDK stores an authentication token locally so you remain logged in between visits. This token is:</p>
+  <ul>
+    <li>Encrypted and tied to your session</li>
+    <li>Never shared with third parties</li>
+    <li>Cleared when you log out</li>
+  </ul>
+
+  <h3>Service Worker Cache (PWA)</h3>
+  <p>If you install the App or visit on a modern browser, a service worker may cache the following for faster loading:</p>
+  <ul>
+    <li>Static app files (HTML, CSS, JavaScript)</li>
+    <li>Third-party library files (Leaflet.js, Supabase SDK)</li>
+  </ul>
+  <p>The service worker does <strong>not</strong> cache your account data, check-in records, location coordinates, or any personal information.</p>
+
+  <h2>2. What Is Stored on Our Servers</h2>
+  <p>The following data is stored in our Supabase-hosted database:</p>
+  <ul>
+    <li>Your username and hashed password (via Supabase Auth — we never see your raw password)</li>
+    <li>Your email address</li>
+    <li>Your check-in history, points, streaks, and achievement records</li>
+    <li>Your GPS coordinates at the moment of each check-in</li>
+    <li>Timestamps of all check-in events</li>
+  </ul>
+  <p>Location photos and QR codes are stored in Supabase Storage (cloud object storage). These are public assets and are not linked to individual user accounts.</p>
+
+  <h2>3. Third-Party Services</h2>
+  <p>The App uses the following third-party services that may process data as part of normal operation:</p>
+  <ul>
+    <li><strong>Supabase</strong> (supabase.com) — database, authentication, and file storage. See <a href="https://supabase.com/privacy" target="_blank">supabase.com/privacy</a>.</li>
+    <li><strong>CartoDB / OpenStreetMap</strong> — map tile provider. Tile requests include your IP address as standard HTTP traffic. No personal data is sent beyond this. See <a href="https://carto.com/privacy" target="_blank">carto.com/privacy</a>.</li>
+    <li><strong>Google Fonts</strong> — fonts loaded from Google's CDN. Your IP address is sent to Google as part of the font request. See <a href="https://policies.google.com/privacy" target="_blank">policies.google.com/privacy</a>.</li>
+  </ul>
+  <p>We do <strong>not</strong> use Google Analytics, Facebook Pixel, or any advertising or behavioral tracking services.</p>
+
+  <h2>4. Camera Access</h2>
+  <p>The QR scanner feature requests access to your device camera. Camera access is:</p>
+  <ul>
+    <li>Only active when you open the QR Scanner tab and tap "Start Camera"</li>
+    <li>Used solely to read QR codes — no images, video, or frames are stored or transmitted</li>
+    <li>Stopped immediately when you leave the QR Scanner tab</li>
+  </ul>
+  <p>You can deny camera permission at any time in your device settings. GPS check-ins remain available if camera access is denied.</p>
+
+  <h2>5. Location Access</h2>
+  <p>GPS location is requested to calculate your distance from check-in sites. Location data is:</p>
+  <ul>
+    <li>Only accessed in the foreground while the App is open</li>
+    <li>Not tracked continuously or in the background</li>
+    <li>Recorded (your coordinates at check-in time) and stored on our servers</li>
+  </ul>
+  <p>You can deny location permission at any time. QR code check-ins remain available without location permission.</p>
+
+  <h2>6. How to Clear Your Data</h2>
+  <p>To remove locally stored data from your device:</p>
+  <ul>
+    <li>Log out of the App (clears the authentication token from localStorage)</li>
+    <li>Clear your browser's site data (browser Settings &rarr; Privacy &rarr; Clear Browsing Data)</li>
+    <li>Uninstall the PWA if you have added it to your home screen</li>
+  </ul>
+  <p>To request deletion of your server-side data, email us at <a href="mailto:legal@edgesetmarketing.com">legal@edgesetmarketing.com</a>. We will process requests within 30 days.</p>
+
+  <h2>7. Contact</h2>
+  <p>Questions about data storage or this notice:</p>
+  <p>
+    <strong>Edgeset Marketing, LLC</strong><br>
+    Email: <a href="mailto:legal@edgesetmarketing.com">legal@edgesetmarketing.com</a><br>
+    Website: https://victorylap.trail
+  </p>
+
+</div>
+
+<div class="footer">
+  &copy; 2025 Edgeset Marketing, LLC. All rights reserved.
+</div>
+
+</body>
+</html>
