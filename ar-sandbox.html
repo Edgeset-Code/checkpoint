@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#00205B" />
+<title>Victory Lap Trail — AR Sandbox</title>
+
+<!-- model-viewer web component (loads from official unpkg CDN) -->
+<script type="module" src="https://unpkg.com/@google/model-viewer@4.1.0/dist/model-viewer.min.js"></script>
+
+<!-- Google Fonts: match main app -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --cream: #F5F3EB;
+    --navy: #00205B;
+    --red: #C8102E;
+    --gold: #E8A020;
+    --ink: #1a1a1a;
+    --muted: #6b6b6b;
+    --border: rgba(0,32,91,0.15);
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .topbar {
+    background: var(--navy);
+    color: white;
+    padding: calc(env(safe-area-inset-top, 0px) + 0.75rem) 1.25rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .topbar h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.02em;
+    margin: 0;
+  }
+
+  .topbar .subtitle {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.5rem 1.25rem 4rem;
+  }
+
+  .intro {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--muted);
+    margin: 0 0 1.5rem;
+  }
+
+  .card {
+    background: white;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    padding: 1.25rem;
+    margin: 0 0 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .card h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 0 0.25rem;
+    color: var(--navy);
+  }
+
+  .card .caption {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin: 0 0 1rem;
+  }
+
+  model-viewer {
+    width: 100%;
+    height: 320px;
+    background: #fafaf5;
+    border-radius: 10px;
+    --poster-color: #fafaf5;
+  }
+
+  .controls {
+    margin-top: 1rem;
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--navy);
+    min-width: 70px;
+  }
+
+  input[type="text"] {
+    flex: 1;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.85rem;
+    background: white;
+    color: var(--ink);
+  }
+
+  input[type="text"]:focus {
+    outline: 2px solid var(--navy);
+    outline-offset: -1px;
+  }
+
+  button {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 0.8rem;
+    padding: 0.55rem 1rem;
+    border: none;
+    border-radius: 8px;
+    background: var(--navy);
+    color: white;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: opacity 0.15s;
+  }
+
+  button:hover { opacity: 0.85; }
+  button:active { opacity: 0.7; }
+
+  button.secondary {
+    background: white;
+    color: var(--navy);
+    border: 1px solid var(--border);
+  }
+
+  button.gold {
+    background: var(--gold);
+    color: var(--navy);
+  }
+
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .preset-btn {
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    background: white;
+    color: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+
+  .preset-btn:hover {
+    background: var(--cream);
+    border-color: var(--navy);
+  }
+
+  .preset-btn strong {
+    display: block;
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+
+  .preset-btn span {
+    color: var(--muted);
+    font-size: 0.72rem;
+  }
+
+  .status {
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .status.info    { background: #e8f0fe; color: #1a4480; }
+  .status.success { background: #e6f4ea; color: #1e6b3a; }
+  .status.error   { background: #fce8e6; color: #8b1a1a; }
+
+  .tips {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--muted);
+  }
+
+  .tips b {
+    color: var(--navy);
+    font-weight: 700;
+  }
+
+  .tips ul {
+    padding-left: 1.2rem;
+    margin: 0.5rem 0;
+  }
+
+  .tips li {
+    margin: 0.3rem 0;
+  }
+
+  .footer {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 2rem;
+  }
+
+  .footer a {
+    color: var(--navy);
+    text-decoration: none;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--gold);
+    color: var(--navy);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    text-transform: uppercase;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <h1>Victory Lap Trail</h1>
+    <div class="subtitle">AR Sandbox</div>
+  </div>
+  <div class="subtitle">v0.1</div>
+</header>
+
+<main>
+
+  <p class="intro">
+    Drop in a <code>.glb</code> URL and see how the AR flow feels. On a phone, tap the AR icon in the bottom-right of the viewer to place the model in your space. Desktop gets a touch-rotatable preview.
+  </p>
+
+  <!-- Main viewer card -->
+  <div class="card">
+    <h2>Model preview <span class="badge">live</span></h2>
+    <p class="caption" id="current-label">Google Astronaut (known-good test model)</p>
+
+    <model-viewer
+      id="viewer"
+      src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+      ios-src="https://modelviewer.dev/shared-assets/models/Astronaut.usdz"
+      alt="3D model preview"
+      ar
+      ar-modes="webxr scene-viewer quick-look"
+      camera-controls
+      touch-action="pan-y"
+      auto-rotate
+      shadow-intensity="1"
+      exposure="1">
+    </model-viewer>
+
+    <div class="controls">
+      <div class="row">
+        <label for="glb-url">GLB URL</label>
+        <input type="text" id="glb-url" value="https://modelviewer.dev/shared-assets/models/Astronaut.glb" placeholder="https://…/model.glb" />
+      </div>
+      <div class="row">
+        <label for="usdz-url">USDZ URL</label>
+        <input type="text" id="usdz-url" value="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" placeholder="https://…/model.usdz (optional, for iOS AR)" />
+      </div>
+      <div class="row" style="justify-content: flex-end; gap: 0.5rem;">
+        <button class="secondary" id="clear-btn">Clear</button>
+        <button id="load-btn">Load model</button>
+      </div>
+    </div>
+
+    <div id="status" class="status info" style="display:none;"></div>
+  </div>
+
+  <!-- Preset library -->
+  <div class="card">
+    <h2>Test presets</h2>
+    <p class="caption">Known-good models from Google's sample library. One tap to try.</p>
+
+    <div class="preset-grid">
+      <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/Astronaut.glb" data-usdz="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" data-label="Astronaut — Google sample">
+        <strong>Astronaut</strong><span>Google sample · both formats</span>
+      </button>
+      <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb" data-usdz="https://modelviewer.dev/shared-assets/models/NeilArmstrong.usdz" data-label="Neil Armstrong — Google sample">
+        <strong>Neil Armstrong</strong><span>Character · both formats</span>
+      </button>
+      <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb" data-usdz="" data-label="Robot — animated">
+        <strong>Animated robot</strong><span>Shows animation support</span>
+      </button>
+      <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/Horse.glb" data-usdz="" data-label="Horse — animated">
+        <strong>Animated horse</strong><span>Galloping animation</span>
+      </button>
+      <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/glTF/DamagedHelmet/DamagedHelmet.gltf" data-usdz="" data-label="Damaged helmet — PBR showcase">
+        <strong>Damaged helmet</strong><span>PBR material test</span>
+      </button>
+      <button class="preset-btn" data-glb="https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Duck/glTF-Binary/Duck.glb" data-usdz="" data-label="Duck — Khronos reference">
+        <strong>Khronos duck</strong><span>The classic glTF test</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tips / next steps -->
+  <div class="card">
+    <h2>How to use this</h2>
+    <div class="tips">
+      <p>
+        <b>On your iPhone or Android:</b> tap the AR icon that appears in the bottom-right of the viewer. Your phone will open its native AR viewer (Quick Look on iOS, Scene Viewer on Android), you'll see a reticle on the ground, tap to place, then walk around the object.
+      </p>
+      <p>
+        <b>To test your own model:</b>
+      </p>
+      <ul>
+        <li>Upload a <code>.glb</code> file somewhere public — Supabase storage works, or a GitHub repo raw URL</li>
+        <li>Make sure the host serves it with <code>Access-Control-Allow-Origin: *</code> — otherwise CORS will block it</li>
+        <li>Paste the URL into the GLB field above and hit Load</li>
+        <li>For iOS AR, also provide a <code>.usdz</code> version — convert from .glb using Apple's Reality Converter or an online tool</li>
+      </ul>
+      <p>
+        <b>Sourcing models:</b> Poly Haven (CC0), Kenney assets (CC0), Sketchfab (check the license filter — avoid CC-BY-NC for a commercial project), or generate with Meshy / Luma.
+      </p>
+      <p>
+        <b>Keep them small.</b> Under 5MB is the sweet spot. Bigger models take forever to load on cell networks and drain battery fast in AR.
+      </p>
+    </div>
+  </div>
+
+  <p class="footer">
+    Victory Lap Trail · AR sandbox · Drop this file next to <code>index.html</code> in your repo.<br>
+    Uses <a href="https://modelviewer.dev" target="_blank">&lt;model-viewer&gt;</a> by Google.
+  </p>
+
+</main>
+
+<script>
+  const viewer     = document.getElementById('viewer');
+  const glbInput   = document.getElementById('glb-url');
+  const usdzInput  = document.getElementById('usdz-url');
+  const loadBtn    = document.getElementById('load-btn');
+  const clearBtn   = document.getElementById('clear-btn');
+  const label      = document.getElementById('current-label');
+  const statusEl   = document.getElementById('status');
+
+  function showStatus(msg, kind) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status ' + (kind || 'info');
+    statusEl.style.display = 'block';
+  }
+
+  function hideStatus() {
+    statusEl.style.display = 'none';
+  }
+
+  function loadModel(glbUrl, usdzUrl, labelText) {
+    if (!glbUrl || !glbUrl.trim()) {
+      showStatus('Please enter a GLB URL.', 'error');
+      return;
+    }
+    hideStatus();
+    viewer.removeAttribute('src');
+    viewer.removeAttribute('ios-src');
+    setTimeout(() => {
+      viewer.setAttribute('src', glbUrl.trim());
+      if (usdzUrl && usdzUrl.trim()) {
+        viewer.setAttribute('ios-src', usdzUrl.trim());
+      }
+    }, 50);
+    label.textContent = labelText || 'Custom model';
+    showStatus('Loading model… this can take a few seconds on slower connections.', 'info');
+  }
+
+  viewer.addEventListener('load', () => {
+    showStatus('✓ Model loaded. Tap the AR icon on mobile to place it in your space.', 'success');
+    setTimeout(hideStatus, 4000);
+  });
+
+  viewer.addEventListener('error', (e) => {
+    const reason = (e.detail && e.detail.type) || 'unknown';
+    showStatus('Failed to load model (' + reason + '). Check the URL, CORS headers, and that the file is a valid .glb / .gltf.', 'error');
+  });
+
+  loadBtn.addEventListener('click', () => {
+    loadModel(glbInput.value, usdzInput.value, 'Custom model');
+  });
+
+  clearBtn.addEventListener('click', () => {
+    glbInput.value = '';
+    usdzInput.value = '';
+    hideStatus();
+  });
+
+  // Preset buttons
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const glb   = btn.dataset.glb;
+      const usdz  = btn.dataset.usdz;
+      const lbl   = btn.dataset.label;
+      glbInput.value  = glb;
+      usdzInput.value = usdz;
+      loadModel(glb, usdz, lbl);
+    });
+  });
+
+  // Allow Enter key in URL fields to load
+  [glbInput, usdzInput].forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        loadModel(glbInput.value, usdzInput.value, 'Custom model');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
