@@ -9,6 +9,9 @@
 <!-- model-viewer web component (loads from official unpkg CDN) -->
 <script type="module" src="https://unpkg.com/@google/model-viewer@4.1.0/dist/model-viewer.min.js"></script>
 
+<!-- Supabase JS SDK (for auto-listing models in the bucket) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <!-- Google Fonts: match main app -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -272,7 +275,7 @@
     <h1>Victory Lap Trail</h1>
     <div class="subtitle">AR Sandbox</div>
   </div>
-  <div class="subtitle">v0.2</div>
+  <div class="subtitle">v0.3</div>
 </header>
 
 <main>
@@ -318,25 +321,28 @@
     <div id="status" class="status info" style="display:none;"></div>
   </div>
 
-  <!-- Preset library -->
+  <!-- Auto-populated model gallery -->
   <div class="card">
     <h2>Your models</h2>
-    <p class="caption">Tap to load. Your Meshy generations first, then reference models for comparison.</p>
+    <p class="caption">Loaded automatically from your <code>AR Images</code> bucket. Upload a new GLB (and matching USDZ) to the bucket and it appears here on refresh — no editing this file.</p>
 
-    <div class="preset-grid">
-      <button class="preset-btn" data-glb="https://jgyglitvaxmeecxxibpw.supabase.co/storage/v1/object/public/AR%20Images/Meshy_AI_Beach_Car_0417135549_texture.glb" data-usdz="https://jgyglitvaxmeecxxibpw.supabase.co/storage/v1/object/public/AR%20Images/Meshy_AI_Beach_Car_0417135559_texture.usdz" data-label="Beach Racing Era Stock Car">
-        <strong>Beach Racing Stock Car</strong><span>Daytona heritage · both formats</span>
-      </button>
-      <button class="preset-btn" data-glb="https://jgyglitvaxmeecxxibpw.supabase.co/storage/v1/object/public/AR%20Images/Meshy_AI_KTM_motocross_bike_nu_0417024537_texture.glb" data-usdz="https://jgyglitvaxmeecxxibpw.supabase.co/storage/v1/object/public/AR%20Images/Meshy_AI_KTM_motocross_bike_nu_0417024518_texture.usdz" data-label="KTM motocross bike">
-        <strong>KTM motocross bike</strong><span>AFT / dirt track · both formats</span>
-      </button>
-      <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/Astronaut.glb" data-usdz="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" data-label="Astronaut — Google reference">
-        <strong>Google astronaut</strong><span>Reference: known-good scale</span>
-      </button>
-      <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/glTF/DamagedHelmet/DamagedHelmet.gltf" data-usdz="" data-label="Damaged helmet — PBR showcase">
-        <strong>Damaged helmet</strong><span>Reference: PBR material quality</span>
-      </button>
+    <div id="gallery" class="preset-grid">
+      <!-- buttons injected by JS -->
     </div>
+
+    <div id="gallery-status" class="status info" style="margin-top: 0.75rem;">Loading models from your bucket…</div>
+
+    <details style="margin-top: 1rem;">
+      <summary style="cursor:pointer; font-size:0.8rem; color:var(--navy); font-weight:600;">Reference models (for comparison)</summary>
+      <div class="preset-grid" style="margin-top:0.75rem;">
+        <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/Astronaut.glb" data-usdz="https://modelviewer.dev/shared-assets/models/Astronaut.usdz" data-label="Astronaut — Google reference">
+          <strong>Google astronaut</strong><span>Reference: known-good scale</span>
+        </button>
+        <button class="preset-btn" data-glb="https://modelviewer.dev/shared-assets/models/glTF/DamagedHelmet/DamagedHelmet.gltf" data-usdz="" data-label="Damaged helmet — PBR showcase">
+          <strong>Damaged helmet</strong><span>Reference: PBR material quality</span>
+        </button>
+      </div>
+    </details>
   </div>
 
   <!-- Tips / next steps -->
@@ -372,6 +378,16 @@
 </main>
 
 <script>
+  // ============================================================
+  //  CONFIG — paste your Supabase anon (publishable) key below.
+  //  Same key your index.html already uses. Safe to expose.
+  //  Find it: Supabase dashboard → Project Settings → API → anon public
+  // ============================================================
+  const SUPABASE_URL  = 'https://jgyglitvaxmeecxxibpw.supabase.co';
+  const SUPABASE_ANON = 'PASTE_YOUR_ANON_KEY_HERE';
+  const BUCKET        = 'AR Images';
+  // ============================================================
+
   const viewer     = document.getElementById('viewer');
   const glbInput   = document.getElementById('glb-url');
   const usdzInput  = document.getElementById('usdz-url');
@@ -379,6 +395,8 @@
   const clearBtn   = document.getElementById('clear-btn');
   const label      = document.getElementById('current-label');
   const statusEl   = document.getElementById('status');
+  const gallery    = document.getElementById('gallery');
+  const galStatus  = document.getElementById('gallery-status');
 
   function showStatus(msg, kind) {
     statusEl.textContent = msg;
@@ -428,16 +446,16 @@
     hideStatus();
   });
 
-  // Preset buttons
-  document.querySelectorAll('.preset-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const glb   = btn.dataset.glb;
-      const usdz  = btn.dataset.usdz;
-      const lbl   = btn.dataset.label;
-      glbInput.value  = glb;
-      usdzInput.value = usdz;
-      loadModel(glb, usdz, lbl);
-    });
+  // Preset buttons (event delegation — works for injected gallery buttons too)
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.preset-btn');
+    if (!btn) return;
+    const glb  = btn.dataset.glb;
+    const usdz = btn.dataset.usdz;
+    const lbl  = btn.dataset.label;
+    glbInput.value  = glb;
+    usdzInput.value = usdz || '';
+    loadModel(glb, usdz, lbl);
   });
 
   // Allow Enter key in URL fields to load
@@ -448,6 +466,120 @@
       }
     });
   });
+
+  // ============================================================
+  //  Auto-populate "Your models" from the Supabase bucket
+  // ============================================================
+
+  // Turn a filename into a readable label.
+  // "Meshy_AI_Beach_Car_0417135549_texture.glb" -> "Beach Car"
+  function prettyName(filename) {
+    let n = filename.replace(/\.(glb|usdz|gltf)$/i, '');
+    n = n.replace(/^Meshy_AI_/i, '');          // drop Meshy prefix
+    n = n.replace(/_texture$/i, '');           // drop texture suffix
+    n = n.replace(/_?\d{6,}$/g, '');           // drop trailing timestamp/id
+    n = n.replace(/_nu$/i, '');                // drop stray "_nu" fragment
+    n = n.replace(/_+/g, ' ').trim();          // underscores -> spaces
+    if (!n) n = filename;
+    return n.replace(/\b\w/g, c => c.toUpperCase());
+  }
+
+  // Strip extension + known suffixes to get a "base key" so we can
+  // pair a .glb with its matching .usdz even when timestamps differ.
+  function baseKey(filename) {
+    return filename
+      .replace(/\.(glb|usdz|gltf)$/i, '')
+      .replace(/_texture$/i, '')
+      .replace(/_?\d{6,}$/g, '')
+      .replace(/_nu$/i, '')
+      .toLowerCase()
+      .trim();
+  }
+
+  function publicUrl(sb, filename) {
+    return sb.storage.from(BUCKET).getPublicUrl(filename).data.publicUrl;
+  }
+
+  async function loadGallery() {
+    if (!window.supabase) {
+      galStatus.textContent = 'Supabase SDK did not load. Check your connection.';
+      galStatus.className = 'status error';
+      return;
+    }
+    if (SUPABASE_ANON === 'sb_publishable_74qSgS-4g1rbBxFaJ66i2g_js2fbHoe' || !SUPABASE_ANON) {
+      galStatus.innerHTML = 'Paste your Supabase <b>anon key</b> into the CONFIG block near the bottom of this file, then refresh. (Project Settings → API → anon public.)';
+      galStatus.className = 'status info';
+      return;
+    }
+
+    try {
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+      const { data, error } = await sb.storage.from(BUCKET).list('', {
+        limit: 200,
+        sortBy: { column: 'name', order: 'asc' }
+      });
+
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        galStatus.textContent = 'No files found in the bucket yet. Upload a .glb (and matching .usdz) and refresh.';
+        galStatus.className = 'status info';
+        return;
+      }
+
+      // Separate by type
+      const glbFiles  = data.filter(f => /\.(glb|gltf)$/i.test(f.name));
+      const usdzFiles = data.filter(f => /\.usdz$/i.test(f.name));
+
+      // Index USDZ by base key for pairing
+      const usdzByKey = {};
+      usdzFiles.forEach(f => { usdzByKey[baseKey(f.name)] = f.name; });
+
+      if (glbFiles.length === 0) {
+        galStatus.textContent = 'Bucket has files, but no .glb / .gltf models found.';
+        galStatus.className = 'status info';
+        return;
+      }
+
+      // Build a button per GLB, pairing its USDZ if present
+      gallery.innerHTML = '';
+      glbFiles.forEach(glb => {
+        const key      = baseKey(glb.name);
+        const usdzName = usdzByKey[key] || null;
+        const glbUrl   = publicUrl(sb, glb.name);
+        const usdzUrl  = usdzName ? publicUrl(sb, usdzName) : '';
+        const sizeMB   = glb.metadata && glb.metadata.size
+                          ? (glb.metadata.size / 1048576).toFixed(1) + ' MB'
+                          : '';
+        const pairTag  = usdzUrl ? 'GLB + USDZ' : 'GLB only (no iOS AR)';
+        const meta     = [pairTag, sizeMB].filter(Boolean).join(' · ');
+
+        const btn = document.createElement('button');
+        btn.className = 'preset-btn';
+        btn.dataset.glb   = glbUrl;
+        btn.dataset.usdz  = usdzUrl;
+        btn.dataset.label = prettyName(glb.name);
+        btn.innerHTML = '<strong>' + prettyName(glb.name) + '</strong><span>' + meta + '</span>';
+        gallery.appendChild(btn);
+      });
+
+      galStatus.textContent = '✓ Loaded ' + glbFiles.length + ' model' + (glbFiles.length === 1 ? '' : 's') + ' from your bucket.';
+      galStatus.className = 'status success';
+      setTimeout(() => { galStatus.style.display = 'none'; }, 3500);
+
+      // Auto-load the first model into the viewer
+      const first = gallery.querySelector('.preset-btn');
+      if (first) {
+        loadModel(first.dataset.glb, first.dataset.usdz, first.dataset.label);
+      }
+
+    } catch (err) {
+      galStatus.innerHTML = 'Could not list the bucket: ' + (err.message || err) +
+        '<br><br>Common causes: the bucket is not public, the name has a typo, or the anon key is wrong.';
+      galStatus.className = 'status error';
+    }
+  }
+
+  loadGallery();
 </script>
 
 </body>
