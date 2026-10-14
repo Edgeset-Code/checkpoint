@@ -559,6 +559,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
         <!-- Location List -->
         <div class="admin-card">
           <h3>Locations (<span id="loc-count">0</span>)</h3>
+          <select id="admin-loc-filter" onchange="adminSetLocFilter(this.value)" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;padding:0.6rem 0.8rem;color:var(--text);font-size:0.875rem;font-family:var(--sans);outline:none;margin-bottom:0.75rem"></select>
           <div id="admin-location-list" class="location-list"></div>
         </div>
       </div>
@@ -1203,11 +1204,29 @@ function showAchievementToast(a) {
 }
 
 // ── ADMIN ─────────────────────────────────────────────────────
+let adminLocFilter = '';
+function adminSetLocFilter(v) { adminLocFilter = v; renderAdmin(); }
+
 async function renderAdmin() {
   // Always reload fresh from DB so newly added locations appear immediately
   await loadLaps(true);
   await loadLocations(null);
-  const locs = allLocations;
+  // Filter the location list by trail (lap). '' = all, '__none' = not assigned to any lap
+  if (adminLocFilter && adminLocFilter !== '__none' && !allLaps.some(l => l.id === adminLocFilter)) adminLocFilter = '';
+  const locs = allLocations.filter(loc =>
+    !adminLocFilter ? true :
+    adminLocFilter === '__none' ? !loc.lap_id :
+    loc.lap_id === adminLocFilter);
+  const filterSel = document.getElementById('admin-loc-filter');
+  if (filterSel) {
+    const countFor = id => allLocations.filter(x => x.lap_id === id).length;
+    const unassigned = allLocations.filter(x => !x.lap_id).length;
+    filterSel.innerHTML =
+      `<option value="">All trails (${allLocations.length})</option>` +
+      allLaps.map(l => `<option value="${l.id}">${l.icon||'🏁'} ${escHtml(l.name)} (${countFor(l.id)})</option>`).join('') +
+      (unassigned ? `<option value="__none">No trail assigned (${unassigned})</option>` : '');
+    filterSel.value = adminLocFilter;
+  }
   document.getElementById('loc-count').textContent = locs.length;
 
   // Render laps list
@@ -1218,7 +1237,7 @@ async function renderAdmin() {
       <div style="font-size:1.5rem;flex-shrink:0;line-height:1;width:32px;text-align:center">${lap.icon || '🏁'}</div>
       <div class="location-row-info">
         <div class="location-row-name">${escHtml(lap.name)}</div>
-        <div class="location-row-meta">${escHtml(lap.description || '')} · ${locs.filter(l=>l.lap_id===lap.id).length} locations</div>
+        <div class="location-row-meta">${escHtml(lap.description || '')} · ${allLocations.filter(l=>l.lap_id===lap.id).length} locations</div>
       </div>
       <div class="location-row-actions">
         <button class="btn btn-ghost btn-sm" onclick="adminEditLap('${lap.id}')">Edit</button>
@@ -1245,7 +1264,12 @@ async function renderAdmin() {
   const lapOptions = '<option value="">— No Lap —</option>' + allLaps.map(l =>
     `<option value="${l.id}">${l.icon||'🏁'} ${escHtml(l.name)}</option>`).join('');
   const lapSelect = document.getElementById('loc-lap');
-  if (lapSelect) lapSelect.innerHTML = lapOptions;
+  if (lapSelect) {
+    const keep = lapSelect.value;
+    lapSelect.innerHTML = lapOptions;
+    // New locations default to the trail being viewed
+    lapSelect.value = (adminLocFilter && adminLocFilter !== '__none') ? adminLocFilter : keep;
+  }
 
   const list = document.getElementById('admin-location-list');
   list.innerHTML = locs.length ? locs.map(loc => `
