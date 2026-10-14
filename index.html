@@ -324,6 +324,17 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .splash-btn { background: #C8102E; color: #fff; border: none; border-radius: 12px; padding: 0.9rem 2.5rem; font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.15s; letter-spacing: 0.01em; }
 .splash-btn:hover { background: #a00c24; transform: translateY(-2px); }
 .splash-version { font-size: 0.65rem; color: rgba(255,255,255,0.25); font-family: 'Open Sans', sans-serif; margin-top: 1.25rem; }
+
+/* Map location pins — show the lap's icon */
+.loc-pin-wrap { background: none; border: none; }
+.loc-pin { position: relative; width: 38px; height: 38px; background: #00205B; border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+  display: flex; align-items: center; justify-content: center; }
+.loc-pin.visited { background: #C8102E; }
+.loc-pin-emoji { transform: rotate(45deg); font-size: 18px; line-height: 1; }
+.loc-pin-check { position: absolute; top: -6px; right: -6px; transform: rotate(45deg); width: 16px; height: 16px;
+  background: #E8A020; color: #00205B; border: 2px solid #fff; border-radius: 50%; font: 700 10px/12px Montserrat, sans-serif;
+  text-align: center; }
 </style>
 </head>
 <body>
@@ -888,12 +899,16 @@ function makeUserIcon() {
   });
 }
 
-function makeLocIcon(visited) {
-  const bg = visited ? '#C8102E' : '#9ca3af';
-  const border = visited ? '#ffffff' : '#ffffff';
+function lapIconFor(loc) {
+  const lap = allLaps.find(l => l.id === loc.lap_id);
+  return (lap && lap.icon) || (currentLap && currentLap.icon) || '🏁';
+}
+
+function makeLocIcon(visited, emoji) {
   return L.divIcon({
-    html: `<div style="width:14px;height:14px;background:${bg};border-radius:50%;border:2px solid ${border};box-shadow:0 1px 4px rgba(0,0,0,0.25)"></div>`,
-    className: '', iconSize: [14,14], iconAnchor: [7,7]
+    html: '<div class="loc-pin' + (visited ? ' visited' : '') + '"><span class="loc-pin-emoji">' + emoji + '</span>' +
+          (visited ? '<span class="loc-pin-check">✓</span>' : '') + '</div>',
+    className: 'loc-pin-wrap', iconSize: [38,46], iconAnchor: [19,46]
   });
 }
 
@@ -908,7 +923,7 @@ async function renderLocationMarkers() {
   }
   allLocations.forEach(loc => {
     const isVisited = visited.has(loc.id);
-    const marker = L.marker([loc.lat, loc.lng], { icon: makeLocIcon(isVisited) }).addTo(map);
+    const marker = L.marker([loc.lat, loc.lng], { icon: makeLocIcon(isVisited, lapIconFor(loc)) }).addTo(map);
     marker.on('click', () => openBottomSheet(loc, isVisited));
     const circle = L.circle([loc.lat, loc.lng], {
       radius: loc.radius_meters, color: '#C8102E',
