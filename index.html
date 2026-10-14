@@ -378,6 +378,47 @@ html, body { max-width: 100%; overflow-x: hidden; }
 .section-pad { width: 100%; }
 .admin-card input, .admin-card select, .admin-card textarea, .admin-card img { max-width: 100%; }
 .location-row-meta { overflow-wrap: anywhere; }
+
+/* PROFILE */
+.avatar { border-radius: 50%; object-fit: cover; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 800; flex-shrink: 0; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.menu-user { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; border-radius: 10px; }
+.menu-user:hover { background: var(--surface2); }
+.menu-user-name { font-family: var(--sans); font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.menu-user-link { font-size: 0.72rem; color: var(--accent); font-weight: 600; }
+.profile-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 1.1rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+.profile-head { display: flex; align-items: center; gap: 1rem; }
+.profile-avatar-wrap { position: relative; flex-shrink: 0; }
+.profile-avatar-edit { position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; border: 2px solid #fff; }
+.profile-id { min-width: 0; }
+.profile-name { font-size: 1.3rem; font-weight: 800; color: var(--text); overflow-wrap: anywhere; }
+.profile-sub { font-size: 0.75rem; color: var(--muted); font-family: var(--mono); margin-top: 0.2rem; }
+.profile-field-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); margin: 0.9rem 0 0.4rem; }
+.profile-colors .profile-field-label { margin-top: 1rem; }
+.swatches { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.swatch { width: 32px; height: 32px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 1px var(--border2); cursor: pointer; }
+.swatch.on { box-shadow: 0 0 0 2px var(--text); }
+.profile-photo-actions { display: flex; gap: 0.5rem; margin-top: 0.9rem; flex-wrap: wrap; }
+.profile-name-row { display: flex; gap: 0.5rem; }
+.profile-name-row input { flex: 1; min-width: 0; }
+.profile-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.profile-stats .stat-num { font-size: 1.3rem; }
+.profile-ach-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.5rem; }
+.profile-section-name { font-size: 1rem; font-weight: 800; color: var(--text); }
+.profile-ach-count { font-size: 0.75rem; color: var(--muted); font-family: var(--mono); }
+.progress { height: 8px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
+.progress.small { height: 5px; margin-top: 0.4rem; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); border-radius: 99px; transition: width 0.4s; }
+.profile-ach-list { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.9rem; }
+.pach { display: flex; gap: 0.75rem; align-items: flex-start; padding: 0.7rem 0.8rem; background: var(--surface2); border-radius: 10px; opacity: 0.75; }
+.pach.got { opacity: 1; background: rgba(232,160,32,0.12); border: 1px solid rgba(232,160,32,0.35); }
+.pach-icon { font-size: 1.5rem; line-height: 1; width: 1.8rem; text-align: center; flex-shrink: 0; }
+.pach.got .pach-icon { filter: none; }
+.pach:not(.got) .pach-icon { filter: grayscale(1); }
+.pach-info { flex: 1; min-width: 0; }
+.pach-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+.pach-badge { font-size: 0.6rem; background: var(--gold); color: var(--navy); border-radius: 99px; padding: 0.1rem 0.5rem; margin-left: 0.3rem; vertical-align: middle; }
+.pach-desc { font-size: 0.72rem; color: var(--muted); margin-top: 0.15rem; line-height: 1.45; }
+.pach-meta { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); margin-top: 0.2rem; }
 </style>
 </head>
 <body>
@@ -389,7 +430,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
   <div class="auth-card">
     <h2>Sign in</h2>
     <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@example.com" autocomplete="email"></div>
-    <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Sign in</button>
     <div id="login-error" class="msg msg-error hidden"></div>
   </div>
@@ -406,7 +447,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
     <div class="form-group"><label>Display Name</label><input type="text" id="reg-name" placeholder="Your name"></div>
     <div class="form-group"><label>Username</label><input type="text" id="reg-username" placeholder="letters, numbers, underscores"></div>
     <div class="form-group"><label>Email</label><input type="email" id="reg-email" placeholder="you@example.com" autocomplete="email"></div>
-    <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="6+ characters" autocomplete="new-password"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="reg-password" placeholder="6+ characters" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()"></div>
     <button class="btn btn-primary" id="reg-btn" onclick="doRegister()">Create account</button>
     <div id="reg-error" class="msg msg-error hidden"></div>
     <div id="reg-success" class="msg msg-success hidden"></div>
@@ -462,8 +503,9 @@ html, body { max-width: 100%; overflow-x: hidden; }
   </div>
   <div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
   <nav class="menu-drawer" id="menu-drawer" aria-label="Main menu">
-    <div class="menu-user" id="topbar-user"></div>
+    <div class="menu-user" onclick="switchTab('profile')"><div id="menu-avatar"></div><div><div class="menu-user-name" id="topbar-user"></div><div class="menu-user-link">View profile</div></div></div>
     <div class="nav-tab active" data-tab="map" onclick="switchTab('map')"><span>🗺️</span>Map</div>
+    <div class="nav-tab" data-tab="profile" onclick="switchTab('profile')"><span>👤</span>Profile</div>
     <div class="nav-tab" data-tab="qrscan" onclick="switchTab('qrscan')"><span>📷</span>QR Check In</div>
     <div class="nav-tab" data-tab="history" onclick="switchTab('history')"><span>🕘</span>History</div>
     <div class="nav-tab" data-tab="leaderboard" onclick="switchTab('leaderboard')"><span>🏆</span>Leaderboard</div>
@@ -505,6 +547,50 @@ html, body { max-width: 100%; overflow-x: hidden; }
       <div class="stats-grid" id="stats-grid"></div>
       <div class="section-title">Recent check-ins</div>
       <div id="history-list"></div>
+    </div>
+  </div>
+
+  <div id="tab-profile" class="tab-content">
+    <div class="section-pad">
+      <div class="profile-card">
+        <div class="profile-head">
+          <div class="profile-avatar-wrap">
+            <div id="profile-avatar"></div>
+            <label class="profile-avatar-edit" for="avatar-input" title="Change photo">📷</label>
+            <input type="file" id="avatar-input" accept="image/*" style="display:none" onchange="uploadAvatar(this)">
+          </div>
+          <div class="profile-id">
+            <div class="profile-name" id="profile-name"></div>
+            <div class="profile-sub" id="profile-sub"></div>
+          </div>
+        </div>
+        <div class="profile-colors" id="profile-colors"></div>
+        <div class="profile-photo-actions">
+          <label class="btn btn-secondary btn-sm" for="avatar-input">Upload photo</label>
+          <button class="btn btn-ghost btn-sm hidden" id="avatar-remove-btn" onclick="removeAvatar()">Remove photo</button>
+        </div>
+        <div class="inline-form" style="margin-top:0.9rem">
+          <div class="profile-field-label">Display name</div>
+          <div class="profile-name-row">
+            <input type="text" id="profile-name-input" maxlength="40" placeholder="Your name">
+            <button class="btn btn-primary btn-sm" style="width:auto;margin-top:0" onclick="saveDisplayName()">Save</button>
+          </div>
+        </div>
+        <div id="profile-msg" class="msg hidden"></div>
+      </div>
+
+      <div class="stats-grid profile-stats" id="profile-stats"></div>
+
+      <div class="profile-card">
+        <div class="profile-ach-head">
+          <div class="profile-section-name">Achievements</div>
+          <div class="profile-ach-count" id="profile-ach-count"></div>
+        </div>
+        <div class="progress"><div class="progress-fill" id="profile-ach-bar"></div></div>
+        <div class="profile-ach-list" id="profile-ach-list"></div>
+      </div>
+
+      <button class="btn btn-ghost" style="width:100%;margin-top:0.5rem" onclick="doLogout()">Sign out</button>
     </div>
   </div>
 
@@ -638,7 +724,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
         <div class="admin-card">
           <h3>Admin Tools</h3>
           <div class="inline-form">
-            <input type="text" id="promote-email" placeholder="Username to grant admin">
+            <input type="text" id="promote-email" placeholder="Username to grant admin" onkeydown="if(event.key==='Enter')adminPromote()">
             <button class="btn btn-primary" onclick="adminPromote()">Grant admin access</button>
             <div id="promote-msg" class="msg hidden"></div>
           </div>
@@ -754,23 +840,68 @@ let recentlyCheckedIn = new Set();
 let pendingPoints = 0;
 
 // ── BOOT ─────────────────────────────────────────────────────
+let appEnteredFor = null;   // user id the app is currently open for
+let enteringApp = false;    // guards against double sign-in handling
+let loggingOut = false;
+
 async function bootApp() {
   const { data: { session } } = await sb.auth.getSession();
-  if (session) {
-    await loadProfile(session.user.id);
-    enterApp();
-  } else {
-    showScreen('login');
-  }
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN') {
-      await loadProfile(session.user.id);
-      enterApp();
-    } else if (event === 'SIGNED_OUT') {
-      currentUser = null; currentProfile = null;
-      stopGPS(); showScreen('login');
+  if (session) await handleSignedIn(session.user.id);
+  else showScreen('login');
+  sb.auth.onAuthStateChange((event, session) => {
+    // Supabase re-fires SIGNED_IN on token refresh / tab focus. Only react to a genuinely new sign-in.
+    if (event === 'SIGNED_IN' && session && session.user.id !== appEnteredFor) {
+      setTimeout(() => handleSignedIn(session.user.id), 0);
+    } else if (event === 'SIGNED_OUT' && !loggingOut && appEnteredFor) {
+      resetToLogin();
     }
   });
+}
+
+async function handleSignedIn(userId) {
+  if (enteringApp || appEnteredFor === userId) return;
+  enteringApp = true;
+  try {
+    await loadProfile(userId);
+    if (!currentProfile) {
+      showScreen('login');
+      showEl('login-error', 'Signed in, but your profile could not be loaded. Please try again.', 'error');
+      try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
+      currentUser = null;
+      return;
+    }
+    appEnteredFor = userId;
+    await enterApp();
+  } finally {
+    enteringApp = false;
+    resetAuthButtons();
+  }
+}
+
+function resetAuthButtons() {
+  const lb = document.getElementById('login-btn');
+  if (lb) { lb.disabled = false; lb.textContent = 'Sign in'; }
+}
+
+function resetToLogin() {
+  appEnteredFor = null;
+  currentUser = null; currentProfile = null;
+  userAchievements = new Set();
+  try { recentlyCheckedIn.clear(); } catch (e) {}
+  try { stopGPS(); } catch (e) {}
+  try { stopQRScanner(); } catch (e) {}
+  try { closeMenu(); } catch (e) {}
+  try { closeBottomSheet(); } catch (e) {}
+  const picker = document.getElementById('lap-picker'); if (picker) picker.classList.add('hidden');
+  document.getElementById('admin-tab').classList.add('hidden');
+  Object.values(locationMarkers).forEach(m => { try { m.marker.remove(); m.circle.remove(); } catch (e) {} });
+  locationMarkers = {};
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'map'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-map'));
+  const title = document.getElementById('topbar-title'); if (title) title.textContent = 'Map';
+  const pw = document.getElementById('login-password'); if (pw) pw.value = '';
+  resetAuthButtons();
+  showScreen('login');
 }
 
 initSupabase(SUPABASE_URL, SUPABASE_KEY);
@@ -805,9 +936,16 @@ async function doLogin() {
   btn.disabled = true; btn.textContent = 'Signing in...';
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
-  const { error } = await sb.auth.signInWithPassword({ email, password });
-  btn.disabled = false; btn.textContent = 'Sign in';
-  if (error) showEl('login-error', error.message, 'error');
+  if (!email || !password) { showEl('login-error', 'Enter your email and password', 'error'); resetAuthButtons(); return; }
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) { showEl('login-error', error.message, 'error'); resetAuthButtons(); return; }
+    await handleSignedIn(data.user.id);
+  } catch (e) {
+    showEl('login-error', 'Could not reach the server. Check your connection and try again.', 'error');
+  } finally {
+    if (!appEnteredFor) resetAuthButtons();
+  }
 }
 
 async function doRegister() {
@@ -832,7 +970,11 @@ async function doReset() {
 }
 
 async function doLogout() {
-  await sb.auth.signOut();
+  if (loggingOut) return;
+  loggingOut = true;
+  resetToLogin();                      // update the screen immediately
+  try { await sb.auth.signOut({ scope: 'local' }); } catch (e) {}
+  loggingOut = false;
 }
 
 // ── ENTER APP ────────────────────────────────────────────────
@@ -842,7 +984,8 @@ async function enterApp() {
   document.getElementById('topbar-user').textContent = currentProfile.display_name;
   if (currentProfile.is_admin) document.getElementById('admin-tab').classList.remove('hidden');
   await Promise.all([loadLaps(), loadAchievements()]);
-  setTimeout(() => { initMap(); startGPS(); }, 100);
+  setTimeout(() => { initMap(); stopGPS(); startGPS(); renderLocationMarkers(); }, 100);
+  renderMenuUser();
   // Handle QR check-in from URL param (skip lap picker if QR link)
   const urlParams = new URLSearchParams(window.location.search);
   const qrLocId = urlParams.get('checkin');
@@ -1141,6 +1284,146 @@ async function renderHistory() {
   }).join('') + '</div>';
 }
 
+
+// ── PROFILE ─────────────────────────────────────────────────
+const AVATAR_COLORS = ['#C8102E','#00205B','#E8A020','#0ea5e9','#10b981','#8b5cf6','#ec4899','#475569'];
+
+function profileInitials(p) {
+  const n = (p && (p.display_name || p.username)) || '?';
+  return n.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+}
+function profileColor(p) {
+  if (p && p.avatar_color && /^#[0-9a-f]{6}$/i.test(p.avatar_color)) return p.avatar_color;
+  const u = (p && p.username) || 'x';
+  return AVATAR_COLORS[u.charCodeAt(0) % AVATAR_COLORS.length];
+}
+function avatarHtml(p, size) {
+  const st = 'width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.38) + 'px';
+  if (p && p.avatar_url) return '<img class="avatar" style="' + st + '" src="' + escHtml(p.avatar_url) + '" alt="">';
+  return '<div class="avatar" style="' + st + ';background:' + profileColor(p) + '">' + escHtml(profileInitials(p)) + '</div>';
+}
+function renderMenuUser() {
+  if (!currentProfile) return;
+  document.getElementById('topbar-user').textContent = currentProfile.display_name || currentProfile.username;
+  document.getElementById('menu-avatar').innerHTML = avatarHtml(currentProfile, 40);
+}
+
+async function renderProfile(refresh) {
+  if (!currentUser) return;
+  if (refresh) {
+    const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    if (data) currentProfile = data;
+    await loadAchievements();
+  }
+  const p = currentProfile; if (!p) return;
+  document.getElementById('profile-avatar').innerHTML = avatarHtml(p, 84);
+  document.getElementById('profile-name').textContent = p.display_name || p.username;
+  const since = p.created_at ? new Date(p.created_at).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '';
+  document.getElementById('profile-sub').textContent = '@' + p.username + (since ? ' · Member since ' + since : '');
+  const nameInput = document.getElementById('profile-name-input');
+  if (document.activeElement !== nameInput) nameInput.value = p.display_name || '';
+  document.getElementById('avatar-remove-btn').classList.toggle('hidden', !p.avatar_url);
+
+  const cur = profileColor(p);
+  document.getElementById('profile-colors').innerHTML = p.avatar_url ? '' :
+    '<div class="profile-field-label">Avatar color</div><div class="swatches">' +
+    AVATAR_COLORS.map(c => '<button class="swatch' + (c === cur ? ' on' : '') + '" style="background:' + c + '" aria-label="Color ' + c + '" onclick="setAvatarColor(\'' + c + '\')"></button>').join('') +
+    '</div>';
+
+  const stats = [
+    [p.total_points || 0, 'Points'],
+    [p.total_checkins || 0, 'Check-ins'],
+    [p.unique_locations || 0, 'Places visited'],
+    [(p.current_streak || 0) + 'd', 'Current streak'],
+    [(p.longest_streak || 0) + 'd', 'Best streak'],
+    [userAchievements.size, 'Achievements']
+  ];
+  document.getElementById('profile-stats').innerHTML = stats.map(s =>
+    '<div class="stat-card"><div class="stat-num">' + s[0] + '</div><div class="stat-label">' + s[1] + '</div></div>').join('');
+
+  const statFor = t => ({ checkins_total: p.total_checkins, locations_total: p.unique_locations,
+    streak_days: Math.max(p.current_streak || 0, p.longest_streak || 0), points_total: p.total_points }[t]);
+  const list = allAchievements.slice().sort((a, b) => (userAchievements.has(b.id) - userAchievements.has(a.id)));
+  const earned = allAchievements.filter(a => userAchievements.has(a.id)).length;
+  document.getElementById('profile-ach-count').textContent = earned + ' of ' + allAchievements.length + ' earned';
+  document.getElementById('profile-ach-bar').style.width = (allAchievements.length ? Math.round(earned / allAchievements.length * 100) : 0) + '%';
+  document.getElementById('profile-ach-list').innerHTML = !list.length ? '<div class="empty-state">No achievements yet.</div>' : list.map(a => {
+    const got = userAchievements.has(a.id);
+    const have = statFor(a.trigger_type);
+    const goal = a.trigger_threshold || 0;
+    let prog = '';
+    if (!got && have != null && goal > 0) {
+      const pct = Math.min(100, Math.round((have || 0) / goal * 100));
+      prog = '<div class="progress small"><div class="progress-fill" style="width:' + pct + '%"></div></div><div class="pach-meta">' + Math.min(have || 0, goal) + ' / ' + goal + '</div>';
+    }
+    return '<div class="pach' + (got ? ' got' : '') + '"><div class="pach-icon">' + (a.icon || '🏅') + '</div>' +
+      '<div class="pach-info"><div class="pach-name">' + escHtml(a.name) + (got ? ' <span class="pach-badge">Earned</span>' : '') + '</div>' +
+      '<div class="pach-desc">' + escHtml(a.description || '') + (a.points ? ' · +' + a.points + ' pts' : '') + '</div>' + prog + '</div></div>';
+  }).join('');
+}
+
+async function saveProfileFields(fields, okMsg) {
+  const { data, error } = await sb.from('profiles').update(fields).eq('id', currentUser.id).select().single();
+  if (error || !data) { showEl('profile-msg', 'Could not save: ' + ((error && error.message) || 'unknown error'), 'error'); return false; }
+  currentProfile = data;
+  renderProfile(false); renderMenuUser();
+  if (okMsg) showEl('profile-msg', okMsg, 'success');
+  return true;
+}
+
+async function saveDisplayName() {
+  const v = document.getElementById('profile-name-input').value.trim();
+  if (!v) { showEl('profile-msg', 'Display name cannot be empty', 'error'); return; }
+  await saveProfileFields({ display_name: v }, 'Name saved');
+}
+
+async function setAvatarColor(c) { await saveProfileFields({ avatar_color: c }); }
+
+function resizeImage(file, size) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(img.width, img.height);
+      const cv = document.createElement('canvas'); cv.width = size; cv.height = size;
+      cv.getContext('2d').drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(img.src);
+      cv.toBlob(b => b ? resolve(b) : reject(new Error('Could not read image')), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => reject(new Error('That file could not be opened as an image'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function uploadAvatar(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  showEl('profile-msg', 'Uploading photo...', 'success');
+  try {
+    const blob = await resizeImage(file, 320);
+    const path = currentUser.id + '/avatar-' + Date.now() + '.jpg';
+    const { error } = await sb.storage.from('avatars').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    if (error) throw error;
+    const old = currentProfile.avatar_url;
+    const { data: pub } = sb.storage.from('avatars').getPublicUrl(path);
+    if (await saveProfileFields({ avatar_url: pub.publicUrl }, 'Photo updated')) removeStoredAvatar(old);
+  } catch (e) {
+    console.error('avatar upload', e);
+    showEl('profile-msg', 'Photo upload failed: ' + (e.message || e), 'error');
+  }
+}
+
+async function removeAvatar() {
+  const old = currentProfile.avatar_url;
+  if (await saveProfileFields({ avatar_url: null }, 'Photo removed')) removeStoredAvatar(old);
+}
+
+function removeStoredAvatar(url) {
+  if (!url) return;
+  const m = url.split('/avatars/')[1];
+  if (m && m.startsWith(currentUser.id + '/')) sb.storage.from('avatars').remove([decodeURIComponent(m)]).catch(() => {});
+}
+
 // ── LEADERBOARD ──────────────────────────────────────────────
 async function renderLeaderboard() {
   const { data } = await sb.from('leaderboard').select('*').limit(50);
@@ -1149,13 +1432,18 @@ async function renderLeaderboard() {
   const rankEmoji = r => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : r;
   const rankClass = r => r <= 3 ? `top${r}` : '';
   const colors = ['#C8102E','#f5a623','#8b5cf6','#ec4899','#10b981','#0ea5e9'];
+  let avatarMap = {};
+  try {
+    const { data: av } = await sb.from('profiles').select('id, avatar_url, avatar_color').in('id', data.map(u => u.id));
+    (av || []).forEach(a => { avatarMap[a.id] = a; });
+  } catch (e) {}
   list.innerHTML = '<div class="leaderboard-list">' + data.map(u => {
     const isMe = currentUser && u.id === currentUser.id;
     const initials = u.display_name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
     const color = colors[u.username.charCodeAt(0) % colors.length];
     return `<div class="lb-item${isMe?' lb-me':''}">
       <div class="lb-rank ${rankClass(u.rank)}">${rankEmoji(u.rank)}</div>
-      <div class="lb-avatar" style="background:${color}18;color:${color}">${initials}</div>
+      ${avatarMap[u.id] && avatarMap[u.id].avatar_url ? `<img class="lb-avatar" style="object-fit:cover" src="${escHtml(avatarMap[u.id].avatar_url)}" alt="">` : `<div class="lb-avatar" style="background:${color}18;color:${color}">${initials}</div>`}
       <div class="lb-info">
         <div class="lb-name">${escHtml(u.display_name)}${isMe ? ' <span style="font-size:0.62rem;color:var(--muted);font-family:var(--mono)">(you)</span>' : ''}</div>
         <div class="lb-sub">${u.total_checkins} check-ins · ${u.unique_locations} locations · ${u.current_streak}d streak</div>
@@ -1852,15 +2140,19 @@ async function regenerateQR(locId) {
 }
 
 async function adminPromote() {
-  const username = document.getElementById('promote-email').value.trim().toLowerCase();
-  if (!username) return;
-  const { data, error } = await sb.from('profiles').update({ is_admin: true }).eq('username', username).select();
-  if (error || !data || data.length === 0) {
-    showEl('promote-msg', 'User not found. Check the username and try again.', 'error');
-  } else {
-    showEl('promote-msg', `${username} now has admin access`, 'success');
-    document.getElementById('promote-email').value = '';
+  const input = document.getElementById('promote-email');
+  const username = input.value.trim().toLowerCase().replace(/^@/, '');
+  if (!username) { showEl('promote-msg', 'Enter a username', 'error'); return; }
+  const { data, error } = await sb.rpc('set_admin', { target_username: username, make_admin: true });
+  if (error) {
+    const m = error.message || '';
+    const missing = /set_admin|function|schema cache/i.test(m) && !/No user|Only admins/.test(m);
+    showEl('promote-msg', missing ? 'Admin setup is incomplete: run the latest SQL in Supabase first.' : m, 'error');
+    console.error('set_admin', error);
+    return;
   }
+  showEl('promote-msg', (data || username) + ' (@' + username + ') now has admin access', 'success');
+  input.value = '';
 }
 
 function flyTo(lat, lng) {
@@ -1925,6 +2217,7 @@ function switchTab(tab) {
   if (tab === 'leaderboard') renderLeaderboard();
   if (tab === 'achievements') { loadAchievements().then(renderAchievements); }
   if (tab === 'admin') renderAdmin();
+  if (tab === 'profile') renderProfile(true);
   if (tab !== 'qrscan') stopQRScanner();
 }
 
