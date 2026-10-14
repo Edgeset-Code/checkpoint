@@ -335,6 +335,49 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .loc-pin-check { position: absolute; top: -6px; right: -6px; transform: rotate(45deg); width: 16px; height: 16px;
   background: #E8A020; color: #00205B; border: 2px solid #fff; border-radius: 50%; font: 700 10px/12px Montserrat, sans-serif;
   text-align: center; }
+
+/* ── APP SHELL: header locked, content scrolls inside ── */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html, body { max-width: 100%; overflow-x: hidden; }
+#screen-main:not(.hidden) { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+#screen-main .topbar, #screen-main .gps-bar { flex: 0 0 auto; position: relative; }
+.app-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom, 0px); }
+#tab-map.active { height: 100%; }
+#map { height: 100% !important; width: 100%; }
+
+/* Topbar layout */
+.topbar { justify-content: flex-start; padding-left: 0.6rem; padding-right: 0.6rem; }
+.topbar-right { margin-left: auto; min-width: 0; }
+.topbar-title { color: #fff; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.topbar-lap { max-width: 42vw; overflow: hidden; }
+.topbar-lap #topbar-lap-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-btn { flex: 0 0 auto; width: 40px; height: 40px; border: none; border-radius: 9px; background: rgba(255,255,255,0.08); cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
+.menu-btn span { display: block; width: 20px; height: 2px; background: #fff; border-radius: 2px; transition: transform 0.2s, opacity 0.2s; }
+.menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Slide-out menu */
+.menu-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 3000; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+.menu-overlay.open { opacity: 1; pointer-events: auto; }
+.menu-drawer { position: fixed; top: 0; bottom: 0; left: 0; width: 270px; max-width: 82vw; z-index: 3001; background: var(--surface); box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+  transform: translateX(-102%); transition: transform 0.25s cubic-bezier(0.32,0.72,0,1); overflow-y: auto;
+  padding: calc(var(--safe-top) + 1rem) 0.75rem calc(env(safe-area-inset-bottom, 0px) + 1rem); display: flex; flex-direction: column; gap: 0.15rem; }
+.menu-drawer.open { transform: none; }
+.menu-user { font-size: 0.75rem; color: var(--muted); font-family: var(--mono); padding: 0.25rem 0.75rem 0.85rem; border-bottom: 1px solid var(--border); margin-bottom: 0.5rem; }
+.menu-drawer .nav-tab, .menu-drawer .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 0.75rem; border-radius: 10px; border: none; font-size: 0.92rem; font-weight: 600; color: var(--text); cursor: pointer; font-family: var(--sans); text-transform: none; letter-spacing: 0; }
+.menu-drawer .nav-tab span, .menu-drawer .nav-item span { width: 1.4rem; text-align: center; }
+.menu-drawer .nav-tab:hover, .menu-drawer .nav-item:hover { background: var(--surface2); }
+.menu-drawer .nav-tab.active { background: var(--accent-dim); color: var(--accent); border: none; }
+.menu-sep { border-top: 1px solid var(--border); margin: 0.5rem 0; }
+
+/* Admin: every card the same width, locked to the screen */
+.admin-grid { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 860px) { .admin-grid.two-col { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.admin-card, .admin-grid > *, .section-pad { min-width: 0; max-width: 100%; }
+.section-pad { width: 100%; }
+.admin-card input, .admin-card select, .admin-card textarea, .admin-card img { max-width: 100%; }
+.location-row-meta { overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -399,32 +442,40 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 <!-- MAIN APP -->
 <div id="screen-main" class="hidden">
   <div class="topbar">
+    <button class="menu-btn" id="menu-btn" onclick="toggleMenu()" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
     <div class="topbar-logo">
-      <img data-vlt-logo="1" src="" alt="Victory Lap Trail" style="height:44px;width:auto;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+      <img data-vlt-logo="1" src="" alt="Victory Lap Trail" style="height:40px;width:auto;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
     </div>
+    <div class="topbar-title" id="topbar-title">Map</div>
     <div class="topbar-right">
       <div class="topbar-lap" id="topbar-lap" onclick="showLapPicker()" title="Switch lap">
         <span class="topbar-lap-icon" id="topbar-lap-icon">🏁</span>
         <span id="topbar-lap-name">Select Lap</span>
       </div>
-      <div class="topbar-user" id="topbar-user"></div>
-      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Sign out</button>
     </div>
   </div>
   <div class="gps-bar">
     <div class="gps-dot" id="gps-dot"></div>
     <span id="gps-status">Waiting for GPS...</span>
   </div>
-  <div class="nav-tabs">
-    <div class="nav-tab active" data-tab="map" onclick="switchTab('map')">Map</div>
-    <div class="nav-tab" data-tab="qrscan" onclick="switchTab('qrscan')">QR Check In</div>
-    <div class="nav-tab" data-tab="history" onclick="switchTab('history')">History</div>
-    <div class="nav-tab" data-tab="leaderboard" onclick="switchTab('leaderboard')">Leaderboard</div>
-    <div class="nav-tab" data-tab="achievements" onclick="switchTab('achievements')">Achievements</div>
-    <div class="nav-tab hidden" id="admin-tab" data-tab="admin" onclick="switchTab('admin')">Admin</div>
-    <div class="nav-tab" data-tab="legal" onclick="switchTab('legal')">Info & Legal</div>
-  </div>
+  <div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
+  <nav class="menu-drawer" id="menu-drawer" aria-label="Main menu">
+    <div class="menu-user" id="topbar-user"></div>
+    <div class="nav-tab active" data-tab="map" onclick="switchTab('map')"><span>🗺️</span>Map</div>
+    <div class="nav-tab" data-tab="qrscan" onclick="switchTab('qrscan')"><span>📷</span>QR Check In</div>
+    <div class="nav-tab" data-tab="history" onclick="switchTab('history')"><span>🕘</span>History</div>
+    <div class="nav-tab" data-tab="leaderboard" onclick="switchTab('leaderboard')"><span>🏆</span>Leaderboard</div>
+    <div class="nav-tab" data-tab="achievements" onclick="switchTab('achievements')"><span>🎖️</span>Achievements</div>
+    <div class="nav-tab hidden" id="admin-tab" data-tab="admin" onclick="switchTab('admin')"><span>⚙️</span>Admin</div>
+    <div class="nav-tab" data-tab="legal" onclick="switchTab('legal')"><span>ℹ️</span>Info &amp; Legal</div>
+    <div class="menu-sep"></div>
+    <div class="nav-item" onclick="closeMenu();showLapPicker()"><span>🔁</span>Switch Lap</div>
+    <div class="nav-item" onclick="closeMenu();doLogout()"><span>🚪</span>Sign out</div>
+  </nav>
 
+  <div class="app-body" id="app-body">
   <div id="tab-map" class="tab-content active"><div id="map"></div></div>
 
   <div id="tab-qrscan" class="tab-content">
@@ -639,6 +690,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
       </div>
     </div>
   </div>
+  </div><!-- /app-body -->
 </div>
 
 <!-- LOCATION BOTTOM SHEET -->
@@ -1843,7 +1895,29 @@ function closeBottomSheet() {
 }
 
 // ── NAV ──────────────────────────────────────────────────────
+function toggleMenu() {
+  document.getElementById('menu-drawer').classList.contains('open') ? closeMenu() : openMenu();
+}
+function openMenu() {
+  document.getElementById('menu-drawer').classList.add('open');
+  document.getElementById('menu-overlay').classList.add('open');
+  document.getElementById('menu-btn').setAttribute('aria-expanded', 'true');
+}
+function closeMenu() {
+  document.getElementById('menu-drawer').classList.remove('open');
+  document.getElementById('menu-overlay').classList.remove('open');
+  document.getElementById('menu-btn').setAttribute('aria-expanded', 'false');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
 function switchTab(tab) {
+  closeMenu();
+  const navEl = document.querySelector('.nav-tab[data-tab="' + tab + '"]');
+  const titleEl = document.getElementById('topbar-title');
+  if (navEl && titleEl) titleEl.textContent = (navEl.lastChild && navEl.lastChild.textContent || navEl.textContent).trim();
+  const body = document.getElementById('app-body');
+  if (body) body.scrollTop = 0;
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
   if (tab === 'map' && map) setTimeout(() => map.invalidateSize(), 50);
