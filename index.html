@@ -340,6 +340,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html, body { max-width: 100%; overflow-x: hidden; }
 #screen-main:not(.hidden) { display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+#screen-main:not(.hidden) { position: fixed; top: 0; left: 0; right: 0; bottom: 0; height: auto; }
 #screen-main .topbar, #screen-main .gps-bar { flex: 0 0 auto; position: relative; }
 .app-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom, 0px); }
 #tab-map.active { height: 100%; }
@@ -961,8 +962,12 @@ async function loadProfile(userId) {
 
 // ── AUTH ─────────────────────────────────────────────────────
 function showScreen(name) {
+  // Close the phone keyboard and clear any leftover scroll so the top bar isn't pushed under the browser's address bar
+  try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
   ['login','register','reset','newpass','main'].forEach(s =>
     document.getElementById('screen-'+s).classList.toggle('hidden', s !== name));
+  window.scrollTo(0, 0);
+  if (name === 'main') setTimeout(() => { window.scrollTo(0, 0); try { if (map) map.invalidateSize(); } catch (e) {} }, 350);
 }
 
 function showEl(id, msg, type) {
