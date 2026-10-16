@@ -61,6 +61,8 @@ body { font-family: var(--sans); background: var(--bg); color: var(--text); min-
 .form-group label { display: block; font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-bottom: 0.35rem; letter-spacing: 0.06em; text-transform: uppercase; }
 .form-group input { width: 100%; background: var(--surface2); border: 1px solid var(--border2); border-radius: 9px; padding: 0.7rem 0.9rem; color: var(--text); font-size: 0.9rem; font-family: var(--sans); outline: none; transition: border-color 0.15s; }
 .form-group input:focus { border-color: var(--accent); background: var(--surface); }
+/* 16px stops iPhones auto-zooming into a field (and staying zoomed after sign-in) */
+input, select, textarea, .form-group input { font-size: 16px; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.7rem 1.25rem; border-radius: 9px; border: none; cursor: pointer; font-family: var(--sans); font-size: 0.9rem; font-weight: 600; transition: all 0.15s; white-space: nowrap; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary { background: var(--accent); color: #fff; width: 100%; margin-top: 0.5rem; }
