@@ -840,7 +840,9 @@ const SUPABASE_KEY = 'sb_publishable_74qSgS-4g1rbBxFaJ66i2g_js2fbHoe';
 // ── STATE ────────────────────────────────────────────────────
 let currentUser = null;
 let currentProfile = null;
-let allLocations = [];
+let allLocations = [];      // locations shown on the map (current lap only)
+let adminLocations = [];    // every location, for the Admin panel
+let markerRenderSeq = 0;
 let allLaps = [];
 let currentLap = null;
 let allAchievements = [];
@@ -1111,19 +1113,35 @@ async function selectLap(lapId) {
     document.getElementById('topbar-lap-name').textContent = currentLap.name;
   }
   // Load locations for this lap and refresh map
-  await loadLocations(lapId);
   recentlyCheckedIn = new Set();
-  renderLocationMarkers();
   switchTab('map');
+  await loadLocations(lapId);
+  setTimeout(fitMapToLocations, 150);
 }
 
 // ── LOCATIONS ────────────────────────────────────────────────
-async function loadLocations(lapId) {
+async function fetchLocations(lapId) {
   let query = sb.from('locations').select('*').eq('is_active', true).order('name');
   if (lapId !== undefined && lapId !== null) query = query.eq('lap_id', lapId);
   const { data } = await query;
-  allLocations = data || [];
-  renderLocationMarkers();
+  return data || [];
+}
+
+// Loads the map's locations. With no argument it reloads whatever lap is selected.
+async function loadLocations(lapId, fit) {
+  if (lapId === undefined) lapId = currentLap ? currentLap.id : null;
+  allLocations = await fetchLocations(lapId);
+  await renderLocationMarkers();
+  if (fit) fitMapToLocations();
+}
+
+// Zoom the map so every location in the current lap is in view
+function fitMapToLocations() {
+  if (!map || !allLocations.length) return;
+  try { map.invalidateSize(); } catch (e) {}
+  if (allLocations.length === 1) { map.setView([allLocations[0].lat, allLocations[0].lng], 16); return; }
+  const bounds = L.latLngBounds(allLocations.map(l => [l.lat, l.lng]));
+  map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
 }
 
 // ── MAP ──────────────────────────────────────────────────────
@@ -1160,13 +1178,15 @@ function makeLocIcon(visited, emoji) {
 
 async function renderLocationMarkers() {
   if (!map) return;
-  Object.values(locationMarkers).forEach(m => { try { m.marker.remove(); m.circle.remove(); } catch {} });
-  locationMarkers = {};
+  const seq = ++markerRenderSeq;
   let visited = new Set();
   if (currentUser) {
     const { data } = await sb.from('check_ins').select('location_id').eq('user_id', currentUser.id);
     if (data) data.forEach(c => visited.add(c.location_id));
   }
+  if (seq !== markerRenderSeq) return;   // a newer redraw has started; let it win
+  Object.values(locationMarkers).forEach(m => { try { m.marker.remove(); m.circle.remove(); } catch {} });
+  locationMarkers = {};
   allLocations.forEach(loc => {
     const isVisited = visited.has(loc.id);
     const marker = L.marker([loc.lat, loc.lng], { icon: makeLocIcon(isVisited, lapIconFor(loc)) }).addTo(map);
@@ -1207,7 +1227,7 @@ function onGPSUpdate(pos) {
   if (!userMarker) {
     userMarker = L.marker(ll, { icon: makeUserIcon(), zIndexOffset: 1000 }).addTo(map).bindPopup('You are here');
     userCircle = L.circle(ll, { radius: acc, color: '#C8102E', fillColor: '#C8102E', fillOpacity: 0.05, weight: 1, opacity: 0.3 }).addTo(map);
-    map.setView(ll, 15);
+    if (!currentLap || !allLocations.length) map.setView(ll, 15);
   } else {
     userMarker.setLatLng(ll);
     userCircle.setLatLng(ll).setRadius(acc);
@@ -1616,19 +1636,19 @@ function adminSetLocFilter(v) { adminLocFilter = v; renderAdmin(); }
 async function renderAdmin() {
   // Always reload fresh from DB so newly added locations appear immediately
   await loadLaps(true);
-  await loadLocations(null);
+  adminLocations = await fetchLocations(null);
   // Filter the location list by trail (lap). '' = all, '__none' = not assigned to any lap
   if (adminLocFilter && adminLocFilter !== '__none' && !allLaps.some(l => l.id === adminLocFilter)) adminLocFilter = '';
-  const locs = allLocations.filter(loc =>
+  const locs = adminLocations.filter(loc =>
     !adminLocFilter ? true :
     adminLocFilter === '__none' ? !loc.lap_id :
     loc.lap_id === adminLocFilter);
   const filterSel = document.getElementById('admin-loc-filter');
   if (filterSel) {
-    const countFor = id => allLocations.filter(x => x.lap_id === id).length;
-    const unassigned = allLocations.filter(x => !x.lap_id).length;
+    const countFor = id => adminLocations.filter(x => x.lap_id === id).length;
+    const unassigned = adminLocations.filter(x => !x.lap_id).length;
     filterSel.innerHTML =
-      `<option value="">All trails (${allLocations.length})</option>` +
+      `<option value="">All trails (${adminLocations.length})</option>` +
       allLaps.map(l => `<option value="${l.id}">${l.icon||'🏁'} ${escHtml(l.name)} (${countFor(l.id)})</option>`).join('') +
       (unassigned ? `<option value="__none">No trail assigned (${unassigned})</option>` : '');
     filterSel.value = adminLocFilter;
@@ -1643,7 +1663,7 @@ async function renderAdmin() {
       <div style="font-size:1.5rem;flex-shrink:0;line-height:1;width:32px;text-align:center">${lap.icon || '🏁'}</div>
       <div class="location-row-info">
         <div class="location-row-name">${escHtml(lap.name)}</div>
-        <div class="location-row-meta">${escHtml(lap.description || '')} · ${allLocations.filter(l=>l.lap_id===lap.id).length} locations</div>
+        <div class="location-row-meta">${escHtml(lap.description || '')} · ${adminLocations.filter(l=>l.lap_id===lap.id).length} locations</div>
       </div>
       <div class="location-row-actions">
         <button class="btn btn-ghost btn-sm" onclick="adminEditLap('${lap.id}')">Edit</button>
@@ -2437,7 +2457,7 @@ async function renderQRCodes() {
   const baseUrl = window.location.href.split('?')[0];
   const grid = document.getElementById('qr-codes-grid');
   grid.innerHTML = '';
-  allLocations.forEach(loc => {
+  (adminLocations.length ? adminLocations : allLocations).forEach(loc => {
     const url = `${baseUrl}?checkin=${loc.id}`;
     const card = document.createElement('div');
     card.className = 'qr-code-card';
