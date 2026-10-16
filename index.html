@@ -277,6 +277,23 @@ input, select, textarea, .form-group input { font-size: 16px; }
 .scoring-val { font-size: 0.85rem; font-weight: 700; color: var(--accent); font-family: var(--mono); }
 .gps-fill-btn { background: var(--accent-dim); border: 1px solid rgba(200,16,46,0.2); color: var(--accent); border-radius: 9px; padding: 0.6rem 0.8rem; font-size: 0.82rem; font-family: var(--sans); font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.4rem; }
 .gps-fill-btn:hover { background: rgba(200,16,46,0.14); }
+.gps-fill-btn + .gps-fill-btn { margin-top: 0.4rem; }
+.pin-picker { position: fixed; inset: 0; z-index: 99998; background: var(--bg); display: flex; flex-direction: column; }
+.pin-picker.hidden { display: none; }
+.pin-picker-bar { background: #00205B; color: #fff; padding: calc(env(safe-area-inset-top, 0px) + 0.75rem) 1rem 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.pin-picker-title { font-weight: 700; font-size: 0.95rem; }
+.pin-picker-hint { font-size: 0.78rem; opacity: 0.75; }
+.pin-picker-search { display: flex; gap: 0.4rem; }
+.pin-picker-search input { flex: 1; min-width: 0; border-radius: 9px; border: none; padding: 0.6rem 0.75rem; font-size: 16px; font-family: var(--sans); }
+.pin-picker-search button { border: none; border-radius: 9px; padding: 0 0.9rem; background: #E8A020; color: #00205B; font-weight: 700; font-family: var(--sans); cursor: pointer; }
+.pin-picker-results { background: #fff; border-radius: 9px; overflow: hidden; }
+.pin-picker-results div { padding: 0.55rem 0.75rem; color: #00205B; font-size: 0.82rem; border-bottom: 1px solid #eee; cursor: pointer; }
+.pin-picker-results div:last-child { border-bottom: none; }
+#pin-picker-map { flex: 1; min-height: 0; }
+.pin-picker-foot { padding: 0.75rem 1rem calc(env(safe-area-inset-bottom, 0px) + 0.75rem); background: var(--surface); display: flex; flex-direction: column; gap: 0.5rem; border-top: 1px solid var(--border); }
+.pin-picker-coords { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); text-align: center; }
+.pin-picker-btns { display: flex; gap: 0.5rem; }
+.pin-picker-btns .btn { flex: 1; }
 .photo-upload-label { display: flex; align-items: center; justify-content: center; gap: 0.4rem; background: var(--surface2); border: 1.5px dashed var(--border2); border-radius: 9px; padding: 0.75rem; font-size: 0.82rem; font-family: var(--sans); font-weight: 600; color: var(--muted); cursor: pointer; transition: all 0.15s; }
 .photo-upload-label:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 .photo-preview { width: 100%; height: 140px; object-fit: cover; border-radius: 9px; border: 1px solid var(--border2); display: none; }
@@ -480,6 +497,27 @@ html, body { max-width: 100%; overflow-x: hidden; }
     <div class="form-group"><label>Confirm new password</label><input type="password" id="newpass-2" autocomplete="new-password"></div>
     <button class="btn btn-primary" id="newpass-btn" onclick="doSetNewPassword()">Save new password</button>
     <div id="newpass-msg" class="msg msg-error hidden"></div>
+  </div>
+</div>
+
+<!-- ADMIN: PICK A SPOT ON THE MAP -->
+<div id="pin-picker" class="pin-picker hidden">
+  <div class="pin-picker-bar">
+    <div class="pin-picker-title">Pick the location</div>
+    <div class="pin-picker-hint">Tap the map to drop the pin, or drag it. Pinch to zoom in close.</div>
+    <div class="pin-picker-search">
+      <input type="search" id="pin-search" placeholder="Search a place or address" onkeydown="if(event.key==='Enter'){event.preventDefault();pinSearch();}">
+      <button onclick="pinSearch()">Find</button>
+    </div>
+    <div id="pin-search-results" class="pin-picker-results hidden"></div>
+  </div>
+  <div id="pin-picker-map"></div>
+  <div class="pin-picker-foot">
+    <div class="pin-picker-coords" id="pin-picker-coords">No spot picked yet</div>
+    <div class="pin-picker-btns">
+      <button class="btn btn-ghost" onclick="closePinPicker()">Cancel</button>
+      <button class="btn btn-primary" id="pin-picker-use" onclick="usePickedSpot()" disabled>Use this spot</button>
+    </div>
   </div>
 </div>
 
@@ -705,6 +743,9 @@ html, body { max-width: 100%; overflow-x: hidden; }
             <img id="loc-photo-preview" class="photo-preview" alt="Preview">
             <button class="gps-fill-btn" onclick="fillMyLocation()">
               📍 Use my current location
+            </button>
+            <button class="gps-fill-btn" onclick="openPinPicker('loc-lat','loc-lng')">
+              🗺️ Pick the spot on a map
             </button>
             <div class="form-row">
               <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Latitude</label><input type="number" id="loc-lat" placeholder="Latitude" step="0.000001"></div>
@@ -1730,6 +1771,7 @@ async function renderAdmin() {
           <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Longitude</label><input type="number" id="edit-lng-${loc.id}" value="${loc.lng}" placeholder="Longitude" step="0.000001"></div>
         </div>
         <button class="gps-fill-btn" onclick="fillEditLocation('${loc.id}')">📍 Use my current location</button>
+        <button class="gps-fill-btn" onclick="openPinPicker('edit-lat-${loc.id}','edit-lng-${loc.id}')">🗺️ Pick the spot on a map</button>
         ${loc.photo_url ? `<img id="edit-current-photo-${loc.id}" src="${loc.photo_url}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)" alt="Current photo">` : ''}
         <label class="photo-upload-label" for="edit-photo-${loc.id}" id="edit-photo-label-${loc.id}">
           📷 ${loc.photo_url ? 'Replace photo (optional)' : 'Add a photo (optional)'}
@@ -2131,6 +2173,93 @@ function fillMyLocation() {
   } else {
     showEl('loc-msg', 'GPS not available yet — check the GPS bar at the top', 'error');
   }
+}
+
+// ── ADMIN MAP PICKER ─────────────────────────────────────────
+let pinMap = null, pinMarker = null, pinTarget = null, pinPicked = null;
+
+function openPinPicker(latId, lngId) {
+  pinTarget = { lat: latId, lng: lngId };
+  document.getElementById('pin-picker').classList.remove('hidden');
+  document.getElementById('pin-search').value = '';
+  document.getElementById('pin-search-results').classList.add('hidden');
+  if (!pinMap) {
+    pinMap = L.map('pin-picker-map', { zoomControl: true });
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom: 19
+    }).addTo(pinMap);
+    pinMap.on('click', e => setPickedSpot(e.latlng.lat, e.latlng.lng));
+  }
+  // Start where it makes sense: the existing coordinates, else the current lap, else you, else Daytona
+  const curLat = parseFloat(document.getElementById(latId).value);
+  const curLng = parseFloat(document.getElementById(lngId).value);
+  pinPicked = null;
+  if (pinMarker) { pinMarker.remove(); pinMarker = null; }
+  setTimeout(() => {
+    pinMap.invalidateSize();
+    if (!isNaN(curLat) && !isNaN(curLng)) { pinMap.setView([curLat, curLng], 17); setPickedSpot(curLat, curLng); }
+    else if (allLocations.length) pinMap.fitBounds(L.latLngBounds(allLocations.map(l => [l.lat, l.lng])), { padding: [30, 30], maxZoom: 16 });
+    else if (userLat !== null && userLng !== null) pinMap.setView([userLat, userLng], 16);
+    else pinMap.setView([29.21, -81.02], 12);
+    if (pinPicked === null) updatePinUI();
+  }, 50);
+}
+
+function setPickedSpot(lat, lng) {
+  pinPicked = { lat, lng };
+  if (!pinMarker) {
+    pinMarker = L.marker([lat, lng], { draggable: true, icon: makeLocIcon(false, currentLap ? currentLap.icon : '📍') }).addTo(pinMap);
+    pinMarker.on('dragend', () => { const p = pinMarker.getLatLng(); pinPicked = { lat: p.lat, lng: p.lng }; updatePinUI(); });
+  } else pinMarker.setLatLng([lat, lng]);
+  updatePinUI();
+}
+
+function updatePinUI() {
+  document.getElementById('pin-picker-coords').textContent = pinPicked
+    ? pinPicked.lat.toFixed(6) + ', ' + pinPicked.lng.toFixed(6)
+    : 'No spot picked yet';
+  document.getElementById('pin-picker-use').disabled = !pinPicked;
+}
+
+async function pinSearch() {
+  const q = document.getElementById('pin-search').value.trim();
+  const box = document.getElementById('pin-search-results');
+  if (!q) return;
+  box.classList.remove('hidden');
+  box.innerHTML = '<div>Searching…</div>';
+  try {
+    const c = pinMap.getCenter();
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=5&q=' + encodeURIComponent(q) +
+      '&viewbox=' + (c.lng - 1) + ',' + (c.lat + 1) + ',' + (c.lng + 1) + ',' + (c.lat - 1);
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    const list = await res.json();
+    if (!list.length) { box.innerHTML = '<div>No matches. Try adding the town name.</div>'; return; }
+    box.innerHTML = '';
+    list.forEach(r => {
+      const d = document.createElement('div');
+      d.textContent = r.display_name;
+      d.onclick = () => {
+        const lat = parseFloat(r.lat), lng = parseFloat(r.lon);
+        pinMap.setView([lat, lng], 18);
+        setPickedSpot(lat, lng);
+        box.classList.add('hidden');
+      };
+      box.appendChild(d);
+    });
+  } catch (e) {
+    box.innerHTML = '<div>Search isn\'t available right now. Tap the map instead.</div>';
+  }
+}
+
+function usePickedSpot() {
+  if (!pinPicked || !pinTarget) return;
+  document.getElementById(pinTarget.lat).value = pinPicked.lat.toFixed(6);
+  document.getElementById(pinTarget.lng).value = pinPicked.lng.toFixed(6);
+  closePinPicker();
+}
+
+function closePinPicker() {
+  document.getElementById('pin-picker').classList.add('hidden');
 }
 
 function fillEditLocation(id) {
