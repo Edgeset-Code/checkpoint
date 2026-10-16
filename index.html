@@ -468,6 +468,18 @@ html, body { max-width: 100%; overflow-x: hidden; }
   <div class="auth-switch"><a onclick="showScreen('login')">Back to sign in</a></div>
 </div>
 
+<!-- AUTH: SET NEW PASSWORD -->
+<div id="screen-newpass" class="auth-screen hidden">
+  <img data-vlt-logo="1" src="" alt="Victory Lap Trail" style="width:160px;max-width:55vw;height:auto;object-fit:contain;margin-bottom:0.5rem;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.15));">
+  <div class="auth-card">
+    <h2>Set a new password</h2>
+    <div class="form-group"><label>New password</label><input type="password" id="newpass-1" placeholder="At least 6 characters" autocomplete="new-password"></div>
+    <div class="form-group"><label>Confirm new password</label><input type="password" id="newpass-2" autocomplete="new-password"></div>
+    <button class="btn btn-primary" id="newpass-btn" onclick="doSetNewPassword()">Save new password</button>
+    <div id="newpass-msg" class="msg msg-error hidden"></div>
+  </div>
+</div>
+
 <!-- LAP PICKER -->
 <div id="lap-picker" class="lap-picker-overlay hidden">
   <img data-vlt-logo="1" src="" alt="Victory Lap Trail" class="lap-picker-logo">
@@ -844,11 +856,26 @@ let appEnteredFor = null;   // user id the app is currently open for
 let enteringApp = false;    // guards against double sign-in handling
 let loggingOut = false;
 
+// Address of this app (e.g. https://edgeset-code.github.io/checkpoint/) — email links return here
+const APP_URL = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+const _authHash = new URLSearchParams(window.location.hash.slice(1));
+let recoveryMode = _authHash.get('type') === 'recovery';
+const authLinkError = _authHash.get('error_description');
+
 async function bootApp() {
   const { data: { session } } = await sb.auth.getSession();
-  if (session) await handleSignedIn(session.user.id);
-  else showScreen('login');
+  if (recoveryMode && session) showScreen('newpass');
+  else if (session) await handleSignedIn(session.user.id);
+  else {
+    showScreen('login');
+    if (authLinkError) {
+      showEl('login-error', authLinkError.replace(/\+/g, ' ') + '. Request a new reset email.', 'error');
+      history.replaceState({}, '', window.location.pathname);
+    }
+  }
   sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') { recoveryMode = true; showScreen('newpass'); return; }
+    if (recoveryMode) return;
     // Supabase re-fires SIGNED_IN on token refresh / tab focus. Only react to a genuinely new sign-in.
     if (event === 'SIGNED_IN' && session && session.user.id !== appEnteredFor) {
       setTimeout(() => handleSignedIn(session.user.id), 0);
@@ -856,6 +883,21 @@ async function bootApp() {
       resetToLogin();
     }
   });
+}
+
+async function doSetNewPassword() {
+  const p1 = document.getElementById('newpass-1').value;
+  const p2 = document.getElementById('newpass-2').value;
+  if (p1.length < 6) { showEl('newpass-msg', 'Password must be at least 6 characters', 'error'); return; }
+  if (p1 !== p2) { showEl('newpass-msg', 'Passwords do not match', 'error'); return; }
+  const btn = document.getElementById('newpass-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const { data, error } = await sb.auth.updateUser({ password: p1 });
+  btn.disabled = false; btn.textContent = 'Save new password';
+  if (error) { showEl('newpass-msg', error.message, 'error'); return; }
+  recoveryMode = false;
+  history.replaceState({}, '', window.location.pathname);
+  await handleSignedIn(data.user.id);
 }
 
 async function handleSignedIn(userId) {
@@ -919,7 +961,7 @@ async function loadProfile(userId) {
 
 // ── AUTH ─────────────────────────────────────────────────────
 function showScreen(name) {
-  ['login','register','reset','main'].forEach(s =>
+  ['login','register','reset','newpass','main'].forEach(s =>
     document.getElementById('screen-'+s).classList.toggle('hidden', s !== name));
 }
 
@@ -957,7 +999,7 @@ async function doRegister() {
   if (!name || !username || !email || !password) { showEl('reg-error', 'All fields required', 'error'); return; }
   if (!/^[a-z0-9_]{3,20}$/.test(username)) { showEl('reg-error', 'Username: 3-20 chars, letters/numbers/underscores', 'error'); return; }
   btn.disabled = true; btn.textContent = 'Creating...';
-  const { error } = await sb.auth.signUp({ email, password, options: { data: { username, display_name: name } } });
+  const { error } = await sb.auth.signUp({ email, password, options: { data: { username, display_name: name }, emailRedirectTo: APP_URL } });
   btn.disabled = false; btn.textContent = 'Create account';
   if (error) showEl('reg-error', error.message, 'error');
   else showEl('reg-success', 'Account created! Sign in below.', 'success');
@@ -965,8 +1007,10 @@ async function doRegister() {
 
 async function doReset() {
   const email = document.getElementById('reset-email').value.trim();
-  await sb.auth.resetPasswordForEmail(email);
-  showEl('reset-msg', 'Password reset email sent!', 'success');
+  if (!email) { showEl('reset-msg', 'Enter your email address', 'error'); return; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: APP_URL });
+  if (error) showEl('reset-msg', error.message, 'error');
+  else showEl('reset-msg', 'Password reset email sent! Check your inbox.', 'success');
 }
 
 async function doLogout() {
