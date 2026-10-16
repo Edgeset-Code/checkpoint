@@ -707,12 +707,12 @@ html, body { max-width: 100%; overflow-x: hidden; }
               📍 Use my current location
             </button>
             <div class="form-row">
-              <input type="number" id="loc-lat" placeholder="Latitude" step="0.000001">
-              <input type="number" id="loc-lng" placeholder="Longitude" step="0.000001">
+              <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Latitude</label><input type="number" id="loc-lat" placeholder="Latitude" step="0.000001"></div>
+              <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Longitude</label><input type="number" id="loc-lng" placeholder="Longitude" step="0.000001"></div>
             </div>
             <div class="form-row">
-              <input type="number" id="loc-radius" placeholder="Radius (m)" value="100">
-              <input type="number" id="loc-points" placeholder="Points" value="10">
+              <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Check-in range (meters)</label><input type="number" id="loc-radius" placeholder="Radius (m)" value="100"></div>
+              <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Points</label><input type="number" id="loc-points" placeholder="Points" value="10"></div>
             </div>
             <button class="btn btn-primary" onclick="adminAddLocation()">Add location</button>
             <div id="loc-msg" class="msg hidden"></div>
@@ -1696,8 +1696,8 @@ async function renderAdmin() {
         <input type="text" id="edit-name-${loc.id}" value="${escHtml(loc.name)}" placeholder="Name">
         <textarea id="edit-desc-${loc.id}" rows="3" placeholder="Description (optional). Paste a URL to make it a clickable link." style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:0.6rem 0.8rem;color:var(--text);font-size:0.875rem;font-family:var(--sans);outline:none;resize:vertical;">${escHtml(loc.description||'')}</textarea>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
-          <input type="number" id="edit-radius-${loc.id}" value="${loc.radius_meters}" placeholder="Radius (m)">
-          <input type="number" id="edit-points-${loc.id}" value="${loc.points}" placeholder="Points">
+          <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Check-in range (meters)</label><input type="number" id="edit-radius-${loc.id}" value="${loc.radius_meters}" placeholder="Radius (m)"></div>
+          <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Points</label><input type="number" id="edit-points-${loc.id}" value="${loc.points}" placeholder="Points"></div>
         </div>
         <div style="font-size:0.68rem;color:var(--muted);font-family:var(--mono);margin-top:0.25rem;letter-spacing:0.05em;text-transform:uppercase">Assign to Lap</div>
         <select id="edit-lap-${loc.id}" style="width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:0.6rem 0.8rem;color:var(--text);font-size:0.875rem;font-family:var(--sans);outline:none">
@@ -1706,8 +1706,8 @@ async function renderAdmin() {
         </select>
         <div style="font-size:0.68rem;color:var(--muted);font-family:var(--mono);margin-top:0.25rem;letter-spacing:0.05em;text-transform:uppercase">GPS Coordinates</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
-          <input type="number" id="edit-lat-${loc.id}" value="${loc.lat}" placeholder="Latitude" step="0.000001">
-          <input type="number" id="edit-lng-${loc.id}" value="${loc.lng}" placeholder="Longitude" step="0.000001">
+          <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Latitude</label><input type="number" id="edit-lat-${loc.id}" value="${loc.lat}" placeholder="Latitude" step="0.000001"></div>
+          <div><label style="display:block;font-size:0.68rem;color:var(--muted);font-family:var(--mono);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.2rem">Longitude</label><input type="number" id="edit-lng-${loc.id}" value="${loc.lng}" placeholder="Longitude" step="0.000001"></div>
         </div>
         <button class="gps-fill-btn" onclick="fillEditLocation('${loc.id}')">📍 Use my current location</button>
         ${loc.photo_url ? `<img id="edit-current-photo-${loc.id}" src="${loc.photo_url}" style="width:100%;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border2)" alt="Current photo">` : ''}
