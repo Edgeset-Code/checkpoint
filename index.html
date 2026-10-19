@@ -176,6 +176,8 @@ input, select, textarea, .form-group input { font-size: 16px; }
 .bs-name { font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; line-height: 1.2; flex: 1; padding-right: 0.5rem; }
 .bs-close { background: var(--surface2); border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 16px; cursor: pointer; color: var(--muted); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .bs-desc { font-size: 0.875rem; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+.bs-directions { display: block; text-align: center; background: #00205B; color: #fff; text-decoration: none; font-weight: 700; font-size: 0.9rem; font-family: var(--sans); border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 14px; }
+.bs-directions:active { opacity: 0.85; }
 .bs-meta { display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid var(--border); }
 .bs-pts { font-size: 0.75rem; font-family: var(--mono); color: var(--muted); }
 .bs-status { font-size: 0.75rem; font-weight: 700; font-family: var(--mono); }
@@ -846,6 +848,7 @@ html, body { max-width: 100%; overflow-x: hidden; }
       <button class="bs-close" onclick="closeBottomSheet()">✕</button>
     </div>
     <div class="bs-desc" id="bs-desc"></div>
+    <a class="bs-directions" id="bs-directions" href="#" target="_blank" rel="noopener">🧭 Get directions</a>
     <div class="bs-meta">
       <span class="bs-pts" id="bs-pts"></span>
       <span class="bs-status" id="bs-status"></span>
@@ -2361,6 +2364,15 @@ function flyTo(lat, lng) {
   map.flyTo([lat, lng], 16);
 }
 
+// Opens turn-by-turn directions in the phone's own maps app: Apple Maps on iPhone/iPad, Google Maps elsewhere
+function directionsUrl(loc) {
+  const dest = loc.lat + ',' + loc.lng;
+  const ua = navigator.userAgent || '';
+  const isApple = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  if (isApple) return 'https://maps.apple.com/?daddr=' + dest + '&q=' + encodeURIComponent(loc.name) + '&dirflg=d';
+  return 'https://www.google.com/maps/dir/?api=1&destination=' + dest;
+}
+
 function openBottomSheet(loc, isVisited) {
   const img = document.getElementById('bs-img');
   if (loc.photo_url) {
@@ -2373,6 +2385,7 @@ function openBottomSheet(loc, isVisited) {
   document.getElementById('bs-name').textContent = loc.name;
   const descEl = document.getElementById('bs-desc');
   descEl.innerHTML = loc.description ? linkifyDesc(loc.description) : '<span style="color:var(--muted);font-style:italic">No description</span>';
+  document.getElementById('bs-directions').href = directionsUrl(loc);
   document.getElementById('bs-pts').textContent = `${loc.points} pts · ${loc.radius_meters}m radius`;
   const statusEl = document.getElementById('bs-status');
   statusEl.textContent = isVisited ? '✓ Visited' : 'Not visited yet';
