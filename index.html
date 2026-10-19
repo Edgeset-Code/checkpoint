@@ -309,6 +309,21 @@ input, select, textarea, .form-group input { font-size: 16px; }
 .auth-legal a:hover { color: var(--accent); }
 
 /* LAP PICKER OVERLAY */
+.lap-welcome { position: fixed; inset: 0; z-index: 99996; background: #00205B; color: #fff; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: calc(env(safe-area-inset-top, 0px) + 2rem) 1.25rem calc(env(safe-area-inset-bottom, 0px) + 2rem); }
+.lap-welcome.hidden { display: none; }
+.lap-welcome-inner { width: 100%; max-width: 480px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.lap-welcome-icon { font-size: 3.25rem; line-height: 1; margin: 0.5rem 0 0.75rem; }
+.lap-welcome-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.4rem; }
+.lap-welcome-desc { font-size: 0.95rem; color: rgba(255,255,255,0.75); line-height: 1.55; margin-bottom: 0.4rem; }
+.lap-welcome-count { font-size: 0.85rem; color: #E8A020; font-weight: 600; margin-bottom: 1.5rem; }
+.lap-welcome-steps { width: 100%; display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1.5rem; text-align: left; }
+.lap-welcome-step { display: flex; gap: 0.85rem; align-items: flex-start; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 0.9rem 1rem; }
+.lap-welcome-step-icon { font-size: 1.4rem; line-height: 1.2; flex-shrink: 0; }
+.lap-welcome-step-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.15rem; }
+.lap-welcome-step-text { font-size: 0.85rem; color: rgba(255,255,255,0.72); line-height: 1.5; }
+.lap-welcome-go { width: 100%; background: #C8102E; color: #fff; border: none; border-radius: 12px; padding: 0.95rem; font-size: 1rem; font-weight: 700; font-family: var(--sans); cursor: pointer; margin-bottom: 1.25rem; }
+.lap-welcome-links { font-size: 0.78rem; color: rgba(255,255,255,0.55); line-height: 1.9; }
+.lap-welcome-links a { color: rgba(255,255,255,0.8); }
 .lap-picker-overlay { position: fixed; inset: 0; z-index: 99997; background: #00205B; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 2rem 1.25rem 3rem; overflow-y: auto; }
 .lap-picker-logo { width: 160px; max-width: 60vw; margin: 1rem auto 0.25rem; display: block; filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4)); }
 .lap-picker-sub { text-align: center; font-size: 0.8rem; font-weight: 600; color: #E8A020; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
@@ -519,6 +534,41 @@ html, body { max-width: 100%; overflow-x: hidden; }
     <div class="pin-picker-btns">
       <button class="btn btn-ghost" onclick="closePinPicker()">Cancel</button>
       <button class="btn btn-primary" id="pin-picker-use" onclick="usePickedSpot()" disabled>Use this spot</button>
+    </div>
+  </div>
+</div>
+
+<!-- LAP WELCOME -->
+<div id="lap-welcome" class="lap-welcome hidden">
+  <div class="lap-welcome-inner">
+    <img data-vlt-logo="1" src="" alt="Victory Lap Trail" class="lap-picker-logo">
+    <div class="lap-welcome-icon" id="lw-icon">🏁</div>
+    <div class="lap-welcome-name" id="lw-name"></div>
+    <div class="lap-welcome-desc" id="lw-desc"></div>
+    <div class="lap-welcome-count" id="lw-count"></div>
+    <div class="lap-welcome-steps">
+      <div class="lap-welcome-step">
+        <div class="lap-welcome-step-icon">🗺️</div>
+        <div><div class="lap-welcome-step-title">Find the stops</div>
+        <div class="lap-welcome-step-text">Every location on this lap is pinned on the map. Tap a pin to read about it and get directions.</div></div>
+      </div>
+      <div class="lap-welcome-step">
+        <div class="lap-welcome-step-icon">🚦</div>
+        <div><div class="lap-welcome-step-title">Travel safely</div>
+        <div class="lap-welcome-step-text">Keep your eyes on the road, obey traffic laws, and never use the app while driving. Respect private property and posted hours.</div></div>
+      </div>
+      <div class="lap-welcome-step">
+        <div class="lap-welcome-step-icon">📍</div>
+        <div><div class="lap-welcome-step-title">Check in to earn points</div>
+        <div class="lap-welcome-step-text">When you arrive, come back to the app and check in by GPS or by scanning the posted QR code to earn your points.</div></div>
+      </div>
+    </div>
+    <button class="lap-welcome-go" onclick="closeLapWelcome()">Start the lap</button>
+    <div class="lap-welcome-links">
+      <a href="help.html" target="_blank">How to play</a> &nbsp;·&nbsp;
+      <a href="terms-of-service.html" target="_blank">Terms of Service</a> &nbsp;·&nbsp;
+      <a href="privacy-policy.html" target="_blank">Privacy Policy</a> &nbsp;·&nbsp;
+      <a href="cookie-data-notice.html" target="_blank">Cookie Notice</a>
     </div>
   </div>
 </div>
@@ -984,6 +1034,7 @@ function resetToLogin() {
   try { closeMenu(); } catch (e) {}
   try { closeBottomSheet(); } catch (e) {}
   const picker = document.getElementById('lap-picker'); if (picker) picker.classList.add('hidden');
+  const welcome = document.getElementById('lap-welcome'); if (welcome) welcome.classList.add('hidden');
   document.getElementById('admin-tab').classList.add('hidden');
   Object.values(locationMarkers).forEach(m => { try { m.marker.remove(); m.circle.remove(); } catch (e) {} });
   locationMarkers = {};
@@ -1159,8 +1210,28 @@ async function selectLap(lapId) {
   // Load locations for this lap and refresh map
   recentlyCheckedIn = new Set();
   switchTab('map');
+  if (currentLap) showLapWelcome(currentLap);
   await loadLocations(lapId);
+  if (currentLap) document.getElementById('lw-count').textContent =
+    allLocations.length + (allLocations.length === 1 ? ' location' : ' locations') + ' to visit';
   setTimeout(fitMapToLocations, 150);
+}
+
+function showLapWelcome(lap) {
+  document.getElementById('lw-icon').textContent = lap.icon || '🏁';
+  document.getElementById('lw-name').textContent = lap.name;
+  const desc = document.getElementById('lw-desc');
+  desc.textContent = lap.description || '';
+  desc.style.display = lap.description ? '' : 'none';
+  document.getElementById('lw-count').textContent = '';
+  const el = document.getElementById('lap-welcome');
+  el.scrollTop = 0;
+  el.classList.remove('hidden');
+}
+
+function closeLapWelcome() {
+  document.getElementById('lap-welcome').classList.add('hidden');
+  setTimeout(fitMapToLocations, 50);
 }
 
 // ── LOCATIONS ────────────────────────────────────────────────
